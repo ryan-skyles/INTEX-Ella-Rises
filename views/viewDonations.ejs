@@ -1,0 +1,78 @@
+<%- include('partials/header') %>
+
+<header class="custom-bg-pink py-5 text-center mb-4">
+    <div class="container">
+        <h1 class="display-5 fw-bold text-dark">Donation Records</h1>
+        <p class="lead text-secondary">Financial support overview.</p>
+    </div>
+</header>
+
+<main class="container mb-5 flex-grow-1">
+
+    <div class="row justify-content-center mb-5">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow border-0 rounded-4 text-center">
+                <div class="card-body py-4">
+                    <h6 class="text-uppercase text-muted fw-bold mb-2">Total Donations Raised</h6>
+                    <h1 class="display-4 fw-bold text-success mb-0">
+                        $<%= parseFloat(grandTotal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                    </h1>
+                    <p class="text-muted small mt-2 mb-0">Lifetime Total from All Donors</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <form action="/admin/donations" method="GET" class="d-flex">
+                <input type="text" name="search" class="form-control me-2 rounded-pill" placeholder="Search donors..." value="<%= typeof search != 'undefined' ? search : '' %>">
+                <button type="submit" class="btn btn-outline-primary rounded-pill">Search</button>
+                <% if (typeof search != 'undefined' && search) { %>
+                    <a href="/admin/donations" class="btn btn-outline-secondary rounded-pill ms-2">Reset</a>
+                <% } %>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow border-0 rounded-4 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="p-3">Date</th>
+                        <th class="p-3">Amount</th>
+                        <th class="p-3">Donor Name</th>
+                        <th class="p-3">Email</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (donations.length > 0) { %>
+                        <% donations.forEach(d => { %>
+                        <tr>
+                            <td class="p-3">
+                                <i class="bi bi-calendar3 me-2 text-muted"></i>
+                                <% if (d.donationdate) { %>
+                                    <%= new Date(d.donationdate).toLocaleDateString('en-US', { timeZone: 'UTC' }) %>
+                                <% } else { %>
+                                    <span class="text-muted small">No Date</span>
+                                <% } %>
+                            </td>
+                
+                            <td class="p-3 fw-bold text-success">
+                                $<%= parseFloat(d.donationamount).toLocaleString('en-US', { minimumFractionDigits: 2 }) %>
+                            </td>
+                            <td class="p-3 fw-bold"><%= d.participantfirstname %> <%= d.participantlastname %></td>
+                            <td class="p-3 text-muted small"><%= d.participantemail %></td>
+                        </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr><td colspan="4" class="text-center p-5">No donation records found.</td></tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<%- include('partials/footer') %>

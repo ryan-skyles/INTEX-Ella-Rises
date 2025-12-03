@@ -1,0 +1,177 @@
+<%- include('partials/header') %>
+
+<main class="container my-5">
+    
+    <div class="row g-4">
+        
+        <div class="col-lg-5">
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-header custom-bg-blue text-white py-3 px-4">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-person-gear me-2"></i>My Information</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form action="/profile/edit" method="POST">
+                        <div class="mb-3 text-center">
+                            <h3 class="fw-bold"><%= participant.participantfirstname %> <%= participant.participantlastname %></h3>
+                            <span class="badge bg-secondary"><%= participant.participantrole %></span>
+                        </div>
+                        <hr>
+                        
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="small text-muted fw-bold">First Name</label>
+                                <input type="text" name="firstName" class="form-control rounded-pill" value="<%= participant.participantfirstname %>">
+                            </div>
+                            <div class="col-6">
+                                <label class="small text-muted fw-bold">Last Name</label>
+                                <input type="text" name="lastName" class="form-control rounded-pill" value="<%= participant.participantlastname %>">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="small text-muted fw-bold">Email (Read Only)</label>
+                            <input type="text" class="form-control rounded-pill bg-light" value="<%= participant.participantemail %>" readonly>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="small text-muted fw-bold">Change Password</label>
+                            <input type="text" name="password" class="form-control rounded-pill" placeholder="Leave blank to keep current">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="small text-muted fw-bold">Phone</label>
+                            <input type="text" name="phone" class="form-control rounded-pill" value="<%= participant.participantphone %>">
+                        </div>
+
+                        <div class="row g-2 mb-4">
+                            <div class="col-4">
+                                <label class="small text-muted fw-bold">City</label>
+                                <input type="text" name="city" class="form-control rounded-pill" value="<%= participant.participantcity %>">
+                            </div>
+                            <div class="col-4">
+                                <label class="small text-muted fw-bold">State</label>
+                                <input type="text" name="state" class="form-control rounded-pill" value="<%= participant.participantstate %>">
+                            </div>
+                            <div class="col-4">
+                                <label class="small text-muted fw-bold">Zip</label>
+                                <input type="text" name="zip" class="form-control rounded-pill" value="<%= participant.participantzip %>">
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary rounded-pill fw-bold">Update Profile</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card shadow border-0 rounded-4 mb-4">
+                    <div class="card-header bg-white py-3 px-4 border-0">
+                        <h5 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-calendar-check text-primary me-2"></i>
+                            My Registered Events
+                        </h5>
+                    </div>
+
+                    <div class="card-body p-0">
+                        <ul class="list-group list-group-flush">
+
+                            <% if (myRegistrations.length > 0) { %>
+                                <% myRegistrations.forEach(r => { %>
+                                    <li class="list-group-item px-4 py-3 d-flex justify-content-between align-items-center">
+
+                                        <div>
+                                            <span class="fw-bold"><%= r.eventname %></span><br>
+                                            <span class="text-muted small">
+                                                <%= new Date(r.eventdatetimestart).toLocaleString() %>
+                                            </span>
+                                        </div>
+
+                                        <form action="/profile/deregister/<%= r.participantregistrationid %>" 
+                                            method="POST"
+                                            onsubmit="return confirm('Deregister from <%= r.eventname %>?');">
+
+                                            <button class="btn btn-sm btn-outline-danger rounded-pill">
+                                                Deregister
+                                            </button>
+                                        </form>
+
+                                    </li>
+                                <% }) %>
+
+                            <% } else { %>
+                                <li class="list-group-item p-4 text-center text-muted">
+                                    No event registrations yet.
+                                </li>
+                            <% } %>
+
+                        </ul>
+                    </div>
+                </div>
+                
+            <div class="card shadow border-0 rounded-4 mb-4">               
+                <div class="card-header bg-white py-3 px-4 border-0">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-trophy-fill text-warning me-2"></i>My Milestones</h5>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        <% if (myMilestones.length > 0) { %>
+                            <% myMilestones.forEach(m => { %>
+                                <li class="list-group-item px-4 py-3 d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold"><%= m.milestonetitle %></span>
+                                    <span class="badge bg-light text-dark border">
+                                        <%= m.milestonedate ? new Date(m.milestonedate).toLocaleDateString() : 'N/A' %>
+                                    </span>
+                                </li>
+                            <% }) %>
+                        <% } else { %>
+                            <li class="list-group-item p-4 text-center text-muted">No milestones yet. Keep going!</li>
+                        <% } %>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-header bg-white py-3 px-4 border-0">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-heart-fill text-danger me-2"></i>My Donation History</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0 align-middle">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-4">Date</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if (myDonations.length > 0) { %>
+                                    <% myDonations.forEach(d => { %>
+                                        <tr>
+                                            <td class="ps-4 text-muted">
+                                                <% if (d.donationdate) { %>
+                                                    <%= new Date(d.donationdate).toLocaleDateString('en-US', { timeZone: 'UTC' }) %>
+                                                <% } else { %>
+                                                    N/A
+                                                <% } %>
+                                            </td>
+                                            <td class="fw-bold text-success">
+                                                $<%= parseFloat(d.donationamount).toLocaleString('en-US', { minimumFractionDigits: 2 }) %>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                <% } else { %>
+                                    <tr><td colspan="2" class="text-center p-4 text-muted">No donations found.</td></tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<%- include('partials/footer') %>

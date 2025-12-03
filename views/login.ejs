@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Ella Rises</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="d-flex align-items-center justify-content-center vh-100">
+
+    <div class="container" style="max-width: 450px;">
+        <div class="text-center mb-4">
+            <h1 class="display-4" style="font-size: 3rem;">Ella Rises</h1>
+            <p class="text-muted">Empowering the Rising Generation</p>
+        </div>
+
+        <div class="card login-card shadow-lg border-0">
+            <div class="card-body p-5">
+                <h3 class="text-center mb-4">Login</h3>
+
+                <% if (typeof error !== 'undefined' && error) { %>
+                    <div class="alert alert-danger text-center py-2 rounded-pill mb-4" role="alert" style="font-size: 0.9rem;">
+                        <i class="bi bi-exclamation-circle me-2"></i><%= error %>
+                    </div> 
+                <% } %>
+
+                <form method="POST" action="/login">
+                    <div class="mb-3">
+                        <label class="form-label">Email</label> 
+                        <input type="text" name="email" class="form-control form-control-lg" placeholder="Example@gmail.com" required autofocus>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label">Password</label>
+                        <input type="password" name="password" class="form-control form-control-lg" placeholder="Enter password" required> 
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg shadow-sm">Sign In</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center bg-white border-0 py-3">
+                <a href="/" class="text-decoration-none fw-bold" style="color: var(--er-blue); font-size: 0.9rem;">
+                    &larr; Back to Home
+                </a>
+                
+                <span class="mx-2"></span>
+
+                <a href="/createUser" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold">
+                    Create User
+                </a>
+            </div>
+        </div>
+
+        <div class="text-center mt-4 text-muted small">
+            &copy; 2025 Ella Rises. Authorized Personnel Only.
+        </div>
+    </div>
+
+</body>
+</html>

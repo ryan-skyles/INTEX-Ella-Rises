@@ -1,0 +1,68 @@
+<%- include('partials/header') %>
+
+<header class="custom-bg-pink py-5 text-center mb-4">
+    <div class="container">
+        <h1 class="display-5 fw-bold text-dark">Survey Submissions</h1>
+        <p class="lead text-secondary">Review feedback from program participants.</p>
+    </div>
+</header>
+
+<main class="container mb-5 flex-grow-1">
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <form action="/surveys" method="GET" class="d-flex">
+                <input type="text" name="search" class="form-control me-2 rounded-pill" placeholder="Search by name or event..." value="<%= typeof search != 'undefined' ? search : '' %>">
+                <button type="submit" class="btn btn-outline-primary rounded-pill">Search</button>
+                <% if (typeof search != 'undefined' && search) { %>
+                    <a href="/surveys" class="btn btn-outline-secondary rounded-pill ms-2">Reset</a>
+                <% } %>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow border-0 rounded-4 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="p-3">Date Submitted</th>
+                        <th class="p-3">Participant Name</th>
+                        <th class="p-3">Event Name</th>
+                        <th class="p-3">Event Date</th>
+                        <th class="p-3 text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (surveys.length > 0) { %>
+                        <% surveys.forEach(s => { %>
+                        <tr>
+                            <td class="p-3 text-muted small">
+                                <%= s.surveysubmissiondate ? new Date(s.surveysubmissiondate).toLocaleDateString() : 'N/A' %>
+                            </td>
+                            <td class="p-3 fw-bold">
+                                <%= s.participantfirstname %> <%= s.participantlastname %>
+                            </td>
+                            <td class="p-3 text-primary">
+                                <%= s.eventname %>
+                            </td>
+                            <td class="p-3">
+                                <%= s.eventdate ? new Date(s.eventdate).toLocaleDateString() : 'N/A' %>
+                            </td>
+                            <td class="p-3 text-end">
+                                <a href="/surveys/<%= s.participantsurveyid %>" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                    View Details
+                                </a>
+                            </td>
+                        </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr><td colspan="5" class="text-center p-5">No survey submissions found matching "<%= typeof search != 'undefined' ? search : '' %>".</td></tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<%- include('partials/footer') %>

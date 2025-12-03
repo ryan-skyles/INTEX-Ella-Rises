@@ -1,0 +1,26 @@
+<%- include('partials/header') %>
+
+<main class="container my-5" style="max-width: 600px;">
+    <div class="card shadow border-0 rounded-4">
+        <div class="card-header bg-white border-0 py-4 text-center">
+            <h2 class="fw-bold text-dark mb-0">Add Milestone</h2>
+        </div>
+        <div class="card-body p-4">
+            <form action="/milestones/add" method="POST">
+                
+                <div class="mb-4">
+                    <label class="form-label fw-bold small text-muted">Milestone Title</label>
+                    <input type="text" name="title" class="form-control rounded-pill form-control-lg" placeholder="e.g. Completed Leadership Workshop" required autofocus>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-custom-pink rounded-pill fw-bold py-2">Create Milestone</button>
+                    <a href="/milestones" class="btn btn-outline-secondary rounded-pill fw-bold py-2">Cancel</a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</main>
+
+<%- include('partials/footer') %>

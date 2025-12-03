@@ -1,0 +1,55 @@
+<%- include('partials/header') %>
+
+<main class="container my-5" style="max-width: 800px;">
+    
+    <div class="card shadow-sm border-0 rounded-4 mb-4">
+        <div class="card-body p-4">
+            <h6 class="text-uppercase text-muted fw-bold mb-3">Survey Submission Details</h6>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <small class="text-muted d-block">Participant</small>
+                    <span class="fs-5 fw-bold"><%= header.participantfirstname %> <%= header.participantlastname %></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <small class="text-muted d-block">Event</small>
+                    <span class="fs-5 fw-bold text-primary"><%= header.eventname %></span>
+                </div>
+                <div class="col-md-12">
+                    <small class="text-muted d-block">Event Date</small>
+                    <span><%= header.eventdate ? new Date(header.eventdate).toDateString() : 'N/A' %></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h5 class="fw-bold mb-3 ms-2">Responses</h5>
+    <div class="card shadow border-0 rounded-4 overflow-hidden">
+        <ul class="list-group list-group-flush">
+            <% if (details.length > 0) { %>
+                <% details.forEach((item, index) => { %>
+                <li class="list-group-item p-4">
+                    <div class="d-flex mb-2">
+                        <span class="badge bg-light text-dark me-2 border">Q<%= index + 1 %></span>
+                        <span class="fw-bold"><%= item.question %></span>
+                    </div>
+                    <div class="ps-4 ms-2 text-secondary">
+                        <i class="bi bi-arrow-return-right me-2"></i>
+                        <%= item.response %>
+                    </div>
+                </li>
+                <% }) %>
+            <% } else { %>
+                <li class="list-group-item p-4 text-center text-muted">No responses recorded for this survey.</li>
+            <% } %>
+        </ul>
+    </div>
+
+    <div class="mt-4 text-center">
+        <a href="/surveys" class="btn btn-outline-secondary rounded-pill px-4">
+            &larr; Back to Survey List
+        </a>
+    </div>
+
+</main>
+
+<%- include('partials/footer') %>

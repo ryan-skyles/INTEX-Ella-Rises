@@ -1,0 +1,58 @@
+<%- include('partials/header') %>
+
+<main class="container my-5" style="max-width: 800px;">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-dark mb-0">Milestone Details</h2>
+        <a href="/milestones" class="btn btn-outline-secondary rounded-pill px-4">
+            &larr; Back to List
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4 mb-4 text-center py-4 bg-light">
+        <h6 class="text-muted text-uppercase small">Milestone Title</h6>
+        <h1 class="fw-bold text-primary display-6"><%= milestone.milestonetitle %></h1>
+    </div>
+
+    <h5 class="fw-bold mb-3 ms-2">Participants who achieved this</h5>
+    <div class="card shadow border-0 rounded-4 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="p-3">Participant Name</th>
+                        <th class="p-3">Email</th>
+                        <th class="p-3 text-end">Date Achieved</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (achievers.length > 0) { %>
+                        <% achievers.forEach(a => { %>
+                        <tr>
+                            <td class="p-3 fw-bold">
+                                <%= a.participantfirstname %> <%= a.participantlastname %>
+                            </td>
+                            <td class="p-3 text-muted"><%= a.participantemail %></td>
+                            <td class="p-3 text-end">
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-3">
+                                    <%= a.milestonedate ? new Date(a.milestonedate).toLocaleDateString() : 'Unknown' %>
+                                </span>
+                            </td>
+                        </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="3" class="text-center p-5 text-muted">
+                                <i class="bi bi-person-x fs-1 d-block mb-2"></i>
+                                No participants have achieved this milestone yet.
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</main>
+
+<%- include('partials/footer') %>

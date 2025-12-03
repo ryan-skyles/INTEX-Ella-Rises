@@ -1,0 +1,57 @@
+<%- include('partials/header') %>
+
+<main class="container my-5" style="max-width: 600px;">
+    <div class="card shadow border-0 rounded-4">
+        <div class="card-header bg-white border-0 py-4 text-center">
+            <h2 class="fw-bold text-dark mb-0">Add New Event</h2>
+        </div>
+        <div class="card-body p-4">
+            <form action="/events/add" method="POST">
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-muted">Event Name</label>
+                    <input type="text" name="eventName" class="form-control rounded-pill" required autofocus>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted">Event Type</label>
+                        <select name="eventType" class="form-select rounded-pill">
+                            <option value="Leadership">Leadership</option>
+                            <option value="STEM">STEM</option>
+                            <option value="Arts">Arts</option>
+                            <option value="Annual Conference">Annual Conference</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted">Recurrence</label>
+                        <select name="eventRecurrence" class="form-select rounded-pill">
+                            <option value="One-Time">One-Time</option>
+                            <option value="Weekly">Weekly</option>
+                            <option value="Monthly">Monthly</option>
+                            <option value="Annual">Annual</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-muted">Default Capacity</label>
+                    <input type="number" name="eventCapacity" class="form-control rounded-pill" value="30">
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold small text-muted">Description</label>
+                    <textarea name="eventDescription" class="form-control rounded-4" rows="4"></textarea>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-custom-pink rounded-pill fw-bold py-2">Create Event</button>
+                    <a href="/events" class="btn btn-outline-secondary rounded-pill fw-bold py-2">Cancel</a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</main>
+
+<%- include('partials/footer') %>

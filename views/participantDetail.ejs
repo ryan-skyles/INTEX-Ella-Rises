@@ -1,0 +1,82 @@
+<%- include('partials/header') %>
+
+<main class="container my-5" style="max-width: 800px;">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-dark mb-0">Participant Details</h2>
+        <a href="/participants" class="btn btn-outline-secondary rounded-pill px-4">
+            &larr; Back to List
+        </a>
+    </div>
+
+    <div class="card shadow border-0 rounded-4 overflow-hidden">
+        <div class="card-header custom-bg-blue text-white py-4 px-4">
+            <h3 class="fw-bold mb-0">
+                <i class="bi bi-person-circle me-2"></i>
+                <%= participant.participantfirstname %> <%= participant.participantlastname %>
+            </h3>
+            <span class="badge bg-light text-dark mt-2"><%= participant.participantrole.toUpperCase() %></span>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <h6 class="text-muted text-uppercase fw-bold small">Contact Information</h6>
+                    <hr class="mt-1 mb-3">
+                    <p class="mb-2"><strong class="me-2">Email:</strong> <%= participant.participantemail %></p>
+                    <p class="mb-2"><strong class="me-2">Phone:</strong> <%= participant.participantphone || 'N/A' %></p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-muted text-uppercase fw-bold small">Location</h6>
+                    <hr class="mt-1 mb-3">
+                    <p class="mb-2"><strong class="me-2">City:</strong> <%= participant.participantcity || 'N/A' %></p>
+                    <p class="mb-2"><strong class="me-2">State:</strong> <%= participant.participantstate || 'N/A' %></p>
+                    <p class="mb-2"><strong class="me-2">Zip:</strong> <%= participant.participantzip || 'N/A' %></p>
+                </div>
+                
+                <div class="col-12 mt-4">
+                    <h6 class="text-muted text-uppercase fw-bold small">Additional Info</h6>
+                    <hr class="mt-1 mb-3">
+                    <p class="mb-2"><strong class="me-2">Field of Interest:</strong> <%= participant.participantfieldofinterest || 'Not Specified' %></p>
+                    <p class="mb-2"><strong class="me-2">Total Donations:</strong> $<%= participant.totaldonations || '0.00' %></p>
+                </div>
+
+                <div class="col-12 mt-4">
+                    <h6 class="text-muted text-uppercase fw-bold small">Milestones Achieved</h6>
+                    <hr class="mt-1 mb-3">
+                    
+                    <% if (milestones && milestones.length > 0) { %>
+                        <ul class="list-group list-group-flush">
+                            <% milestones.forEach(m => { %>
+                                <li class="list-group-item px-0 d-flex justify-content-between align-items-center border-bottom">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-trophy-fill text-warning me-3 fs-5"></i>
+                                        <span class="fw-bold text-dark"><%= m.milestonetitle %></span>
+                                    </div>
+                                    <span class="text-muted small">
+                                        <i class="bi bi-calendar-event me-1"></i>
+                                        <%= m.milestonedate ? new Date(m.milestonedate).toLocaleDateString() : 'No Date' %>
+                                    </span>
+                                </li>
+                            <% }) %>
+                        </ul>
+                    <% } else { %>
+                        <div class="alert alert-light text-center text-muted border-0">
+                            <i class="bi bi-info-circle me-2"></i> No milestones recorded yet.
+                        </div>
+                    <% } %>
+                </div>
+
+            </div>
+
+            <% if (locals.user && (locals.user.role === 'manager' || locals.user.role === 'admin')) { %>
+                <div class="mt-5 d-flex justify-content-end">
+                    <a href="/participants/edit/<%= participant.participantid %>" class="btn btn-primary rounded-pill px-4 me-2">
+                        Edit Info
+                    </a>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</main>
+
+<%- include('partials/footer') %>

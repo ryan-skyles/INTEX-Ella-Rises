@@ -1,0 +1,80 @@
+<%- include('partials/header') %>
+
+<header class="custom-bg-pink py-5 text-center mb-4">
+    <div class="container">
+        <h1 class="display-5 fw-bold text-dark">Participants</h1>
+        <p class="lead text-secondary">Manage program attendees.</p>
+    </div>
+</header>
+
+<main class="container mb-5 flex-grow-1">
+    
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-6">
+            <form action="/participants" method="GET" class="d-flex">
+                <input type="text" name="search" class="form-control me-2 rounded-pill" placeholder="Name or Email..." value="<%= typeof search != 'undefined' ? search : '' %>">
+                <button type="submit" class="btn btn-outline-primary rounded-pill">Search</button>
+                <% if (typeof search != 'undefined' && search) { %>
+                    <a href="/participants" class="btn btn-outline-secondary rounded-pill ms-2">Reset</a>
+                <% } %>
+            </form>
+        </div>
+        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+            <% if (locals.user && (locals.user.role === 'manager' || locals.user.role === 'admin')) { %>
+                <a href="/participants/add" class="btn btn-custom-pink rounded-pill px-4 fw-bold">
+                    <i class="bi bi-person-plus-fill me-1"></i> Add Participant
+                </a>
+            <% } %>
+        </div>
+    </div>
+
+    <div class="card shadow border-0 rounded-4 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="p-3">ID</th>
+                        <th class="p-3">Name</th>
+                        <th class="p-3">Email</th>
+                        <th class="p-3">Role</th>
+                        <th class="p-3 text-end" style="min-width: 200px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (participants.length > 0) { %>
+                        <% participants.forEach(p => { %>
+                        <tr>
+                            <td class="p-3 text-muted">#<%= p.participantid %></td>
+                            <td class="p-3 fw-bold"><%= p.participantfirstname %> <%= p.participantlastname %></td>
+                            <td class="p-3"><%= p.participantemail %></td>
+                            <td class="p-3">
+                                <span class="badge <%= p.participantrole === 'admin' ? 'bg-danger' : (p.participantrole === 'manager' ? 'bg-primary' : 'bg-secondary') %>">
+                                    <%= p.participantrole %>
+                                </span>
+                            </td>
+                            <td class="p-3 text-end">
+                                <a href="/participants/view/<%= p.participantid %>" class="btn btn-sm btn-outline-info me-1" title="View Details">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+
+                                <% if (locals.user && (locals.user.role === 'manager' || locals.user.role === 'admin')) { %>
+                                    <a href="/participants/edit/<%= p.participantid %>" class="btn btn-sm btn-outline-primary me-1" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form action="/participants/delete/<%= p.participantid %>" method="POST" onsubmit="return confirm('Delete this participant?');" style="display:inline;">
+                                        <button class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                <% } %>
+                            </td>
+                        </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr><td colspan="5" class="text-center p-5">No participants found.</td></tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<%- include('partials/footer') %>
