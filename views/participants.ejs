@@ -2,8 +2,8 @@
 
 <header class="custom-bg-pink py-5 text-center mb-4">
     <div class="container">
-        <h1 class="display-5 fw-bold text-dark">Participants</h1>
-        <p class="lead text-secondary">Manage program attendees.</p>
+        <h1 class="display-5 fw-bold text-dark">Users</h1>
+        
     </div>
 </header>
 
@@ -22,7 +22,7 @@
         <div class="col-md-6 text-md-end mt-3 mt-md-0">
             <% if (locals.user && (locals.user.role === 'manager' || locals.user.role === 'admin')) { %>
                 <a href="/participants/add" class="btn btn-custom-pink rounded-pill px-4 fw-bold">
-                    <i class="bi bi-person-plus-fill me-1"></i> Add Participant
+                    <i class="bi bi-person-plus-fill me-1"></i> Add User
                 </a>
             <% } %>
         </div>

@@ -1,0 +1,51 @@
+<%- include('partials/header') %>
+
+<main class="container my-5" style="max-width: 600px;">
+    <div class="card shadow border-0 rounded-4">
+        <div class="card-header bg-white border-0 py-4 text-center">
+            <h2 class="fw-bold text-dark mb-0">Add New User</h2>
+        </div>
+        <div class="card-body p-4">
+            <form action="/users/add" method="POST">
+                
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-bold small text-muted">First Name</label>
+                        <input type="text" name="firstName" class="form-control rounded-pill" required>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-bold small text-muted">Last Name</label>
+                        <input type="text" name="lastName" class="form-control rounded-pill" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-muted">Email</label>
+                    <input type="email" name="email" class="form-control rounded-pill" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-muted">Password</label>
+                    <input type="password" name="password" class="form-control rounded-pill" required>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold small text-muted">Role</label>
+                    <select name="role" class="form-select rounded-pill">
+                        <option value="participant">Participant</option>
+                        <option value="manager">Manager</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-custom-pink rounded-pill fw-bold py-2">Create User</button>
+                    <a href="/users" class="btn btn-outline-secondary rounded-pill fw-bold py-2">Cancel</a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</main>
+
+<%- include('partials/footer') %>

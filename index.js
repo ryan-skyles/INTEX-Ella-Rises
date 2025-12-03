@@ -23,6 +23,19 @@ app.use(
 );
 
 // --- 3. DATABASE CONNECTION ---
+const knex = require("knex")({
+    client: "pg",
+    connection: {
+        host: process.env.RDS_HOSTNAME || "postgres",
+        user: process.env.RDS_USERNAME || "postgres",
+        password: process.env.RDS_PASSWORD || "admin1234",
+        database: process.env.RDS_NAME || "ebdb",
+        port: process.env.RDS_PORT || 5432,
+        ssl: process.env.DB_SSL ? {rejectUnauthorized: false} : false
+    }
+});
+
+// for local use
 // const knex = require("knex")({
 //     client: "pg",
 //     connection: {
@@ -106,7 +119,89 @@ app.post('/login', async (req, res) => {
 app.get('/logout', (req, res) => {
     req.session.destroy(() => res.redirect('/'));
 });
+// ==========================================
+// --- ADMIN: REGISTER USER FOR EVENT ---
+// ==========================================
 
+// 1. 등록 페이지 보여주기 (GET)
+// index.js
+
+// 1. 등록 페이지 보여주기 (GET)
+app.get('/admin/register-event', isLogged, isManager, async (req, res) => {
+    try {
+        // A. 참가자 가져오기 (이름순 정렬)
+        const participants = await knex('participantinfo')
+            .select('participantid', 'participantfirstname', 'participantlastname', 'participantemail')
+            .orderBy('participantfirstname');
+
+        // B. 이벤트 일정 가져오기 (날짜 제한 제거함)
+        const events = await knex('eventoccurrences')
+            .join('eventtemplates', 'eventoccurrences.eventtemplateid', 'eventtemplates.eventtemplateid')
+            .select(
+                'eventoccurrences.eventoccurrenceid',
+                'eventtemplates.eventname',
+                'eventoccurrences.eventdatetimestart',
+                'eventoccurrences.eventlocation'
+            )
+            // .where('eventoccurrences.eventdatetimestart', '>=', new Date()) // 🔴 이 줄을 삭제하거나 주석 처리하세요!
+            .orderBy('eventoccurrences.eventdatetimestart', 'desc'); // 최신순
+
+        res.render('registerUserEvent', { title: 'Register User for Event', participants, events });
+
+    } catch (err) {
+        console.error("Load Register Page Error:", err);
+        res.status(500).send("Error loading registration page.");
+    }
+});
+
+// 2. 등록 처리 로직 (POST) - 안전장치 추가 버전
+app.post('/admin/register-event', isLogged, isManager, async (req, res) => {
+    // 1. 데이터 수신 확인
+    const { participantId, eventOccurrenceId } = req.body;
+
+    // [디버깅] 터미널에 받은 데이터를 출력해서 확인
+    console.log("Registration Request Data:", req.body); 
+
+    // 2. 유효성 검사 (값이 없으면 에러 방지)
+    if (!participantId || !eventOccurrenceId) {
+        return res.send("<script>alert('Please select both a participant and an event.'); window.history.back();</script>");
+    }
+
+    try {
+        // 3. 중복 등록 확인
+        const existing = await knex('participantregistrations')
+            .where({
+                participantid: participantId,
+                eventoccurrenceid: eventOccurrenceId
+            })
+            .first();
+
+        if (existing) {
+            return res.send("<script>alert('This user is already registered for this event.'); window.history.back();</script>");
+        }
+
+        // ✅ 4. ID 직접 계산 (DB 시퀀스 에러 100% 해결)
+        // 현재 가장 큰 ID를 찾아서 +1을 합니다. 
+        const maxIdResult = await knex('participantregistrations').max('participantregistrationid as maxId').first();
+        const nextId = (maxIdResult.maxId || 0) + 1;
+
+        // 5. 등록 실행 (ID 포함해서 5개 컬럼 입력)
+        await knex('participantregistrations').insert({
+            participantregistrationid: nextId, // 강제 지정
+            participantid: participantId,
+            eventoccurrenceid: eventOccurrenceId,
+            registrationcreatedat: new Date(),
+            registrationstatus: 'Registered'
+        });
+
+        // 6. 성공
+        res.send("<script>alert('Registration Successful!'); window.location.href='/participants';</script>");
+
+    } catch (err) {
+        console.error("Admin Register Error:", err);
+        res.status(500).send("Error registering user: " + err.message);
+    }
+});
 // ==========================================
 // --- SIGN UP ROUTES (Create User) ---
 // ==========================================
@@ -743,7 +838,98 @@ app.post('/milestones/delete/:id', isLogged, isManager, async (req, res) => {
 });
 // --- SURVEYS ROUTES ---
 
-// index.js
+// ==========================================
+// --- USER MAINTENANCE ROUTES (Admin) ---
+// ==========================================
+
+// 1. 사용자 목록 조회 (User List)
+app.get('/users', isLogged, isManager, async (req, res) => {
+    const search = req.query.search || '';
+    try {
+        const users = await knex('participantinfo')
+            .where(builder => {
+                if (search) {
+                    builder.where('participantfirstname', 'ilike', `%${search}%`)
+                        .orWhere('participantlastname', 'ilike', `%${search}%`)
+                        .orWhere('participantemail', 'ilike', `%${search}%`);
+                }
+            })
+            .orderBy('participantid', 'asc');
+        
+        res.render('users', { title: 'User Maintenance', users, search });
+    } catch (err) { console.error(err); res.status(500).send("Error loading users."); }
+});
+
+// ✅ 2. 사용자 상세 보기 (User Detail - Profile, Events, Milestones)
+app.get('/users/view/:id', isLogged, isManager, async (req, res) => {
+    const userId = req.params.id;
+    try {
+        // A. Personal Profile
+        const user = await knex('participantinfo')
+            .where({ participantid: userId })
+            .first();
+
+        if (!user) return res.status(404).send("User not found");
+
+        // B. Registered Events (Join Registration -> Occurrence -> Template)
+        const events = await knex('participantregistrations')
+            .join('eventoccurrences', 'participantregistrations.eventoccurrenceid', 'eventoccurrences.eventoccurrenceid')
+            .join('eventtemplates', 'eventoccurrences.eventtemplateid', 'eventtemplates.eventtemplateid')
+            .select(
+                'eventtemplates.eventname',
+                'eventoccurrences.eventdatetimestart',
+                'eventoccurrences.eventlocation',
+                'participantregistrations.registrationstatus'
+            )
+            .where('participantregistrations.participantid', userId)
+            .orderBy('eventoccurrences.eventdatetimestart', 'desc');
+
+        // C. Milestones
+        const milestones = await knex('participantmilestones')
+            .join('milestones', 'participantmilestones.milestoneid', 'milestones.milestoneid')
+            .select('milestones.milestonetitle', 'participantmilestones.milestonedate')
+            .where('participantmilestones.participantid', userId)
+            .orderBy('participantmilestones.milestonedate', 'desc');
+
+        res.render('userDetail', { title: 'User Details', user, events, milestones });
+
+    } catch (err) { console.error(err); res.status(500).send("Error loading user details."); }
+});
+
+// 3. 사용자 추가 페이지 (GET) - 기존 createUser 라우트 재활용 가능하지만 별도로 만듦
+app.get('/users/add', isLogged, isManager, (req, res) => {
+    res.render('addUser', { title: 'Add New User' });
+});
+
+// 4. 사용자 추가 로직 (POST)
+app.post('/users/add', isLogged, isManager, async (req, res) => {
+    const { firstName, lastName, email, password, role } = req.body;
+    try {
+        const maxIdResult = await knex('participantinfo').max('participantid as maxId').first();
+        const nextId = (maxIdResult.maxId || 0) + 1;
+
+        await knex('participantinfo').insert({
+            participantid: nextId,
+            participantfirstname: firstName,
+            participantlastname: lastName,
+            participantemail: email,
+            participantpassword: password,
+            participantrole: role
+        });
+        res.redirect('/users');
+    } catch (err) { console.error(err); res.status(500).send("Error adding user."); }
+});
+
+// 5. 사용자 삭제 (POST)
+app.post('/users/delete/:id', isLogged, isManager, async (req, res) => {
+    try {
+        await knex('participantinfo').where({ participantid: req.params.id }).del();
+        res.redirect('/users');
+    } catch (err) { 
+        console.error(err); 
+        res.status(500).send("Error deleting user. Check for related records."); 
+    }
+});
 
 // 설문조사 목록 (검색 기능 추가됨)
 app.get('/surveys', isLogged, async (req, res) => {

@@ -1,0 +1,96 @@
+<%- include('partials/header') %>
+
+<main class="container my-5" style="max-width: 900px;">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-dark mb-0">Participant Details</h2>
+        <a href="/users" class="btn btn-outline-secondary rounded-pill px-4">
+            &larr; Back to Participant
+        </a>
+    </div>
+
+    <div class="row g-4">
+        
+        <div class="col-12">
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-header custom-bg-blue text-white py-3 px-4">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-person-circle me-2"></i>Personal Profile</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="small text-muted fw-bold">Full Name</label>
+                            <p class="fs-5 mb-0"><%= user.participantfirstname %> <%= user.participantlastname %></p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="small text-muted fw-bold">Email</label>
+                            <p class="fs-5 mb-0"><%= user.participantemail %></p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="small text-muted fw-bold">Role</label>
+                            <p class="mb-0"><span class="badge bg-secondary"><%= user.participantrole %></span></p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="small text-muted fw-bold">Phone</label>
+                            <p class="fs-5 mb-0"><%= user.participantphone || 'N/A' %></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow border-0 rounded-4 h-100">
+                <div class="card-header bg-white py-3 px-4 border-0">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-calendar-check me-2 text-success"></i>Registered Events</h5>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        <% if (events.length > 0) { %>
+                            <% events.forEach(e => { %>
+                                <li class="list-group-item px-4 py-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="fw-bold"><%= e.eventname %></span>
+                                        <span class="badge bg-light text-dark border"><%= e.registrationstatus %></span>
+                                    </div>
+                                    <div class="small text-muted mt-1">
+                                        <i class="bi bi-clock"></i> <%= e.eventdatetimestart ? new Date(e.eventdatetimestart).toLocaleDateString() : 'N/A' %>
+                                        <span class="mx-1">|</span>
+                                        <i class="bi bi-geo-alt"></i> <%= e.eventlocation || 'Online' %>
+                                    </div>
+                                </li>
+                            <% }) %>
+                        <% } else { %>
+                            <li class="list-group-item p-4 text-center text-muted">No registered events.</li>
+                        <% } %>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow border-0 rounded-4 h-100">
+                <div class="card-header bg-white py-3 px-4 border-0">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-trophy-fill me-2 text-warning"></i>Milestones</h5>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        <% if (milestones.length > 0) { %>
+                            <% milestones.forEach(m => { %>
+                                <li class="list-group-item px-4 py-3 d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold"><%= m.milestonetitle %></span>
+                                    <small class="text-muted"><%= m.milestonedate ? new Date(m.milestonedate).toLocaleDateString() : 'N/A' %></small>
+                                </li>
+                            <% }) %>
+                        <% } else { %>
+                            <li class="list-group-item p-4 text-center text-muted">No milestones achieved yet.</li>
+                        <% } %>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<%- include('partials/footer') %>
