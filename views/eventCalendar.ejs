@@ -1,0 +1,106 @@
+<%- include('partials/header') %>
+
+<header class="custom-bg-pink py-5 text-center mb-4">
+    <div class="container">
+        <h1 class="display-5 fw-bold text-dark"><%= title %></h1>
+        <p class="lead text-secondary">Select a date to register.</p>
+    </div>
+</header>
+
+<main class="container my-5">
+
+    <!-- Calendar -->
+    <div id="calendar" class="shadow rounded-4 p-4 bg-white"></div>
+
+    <!-- Inline Popup (hidden by default) -->
+    <div id="popup" 
+         class="p-4 shadow rounded-4 bg-white border position-fixed" 
+         style="top: 20%; left: 50%; transform: translateX(-50%); width: 350px; display: none; z-index: 9999;">
+        <h5 class="fw-bold mb-3" id="popupTitle"></h5>
+        <p id="popupDetails" class="mb-4"></p>
+
+        <div class="text-end">
+            <button id="cancelBtn" class="btn btn-secondary me-2">Cancel</button>
+            <button id="confirmBtn" class="btn btn-success">Confirm</button>
+        </div>
+    </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    const popup = document.getElementById("popup");
+    const popupTitle = document.getElementById("popupTitle");
+    const popupDetails = document.getElementById("popupDetails");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const confirmBtn = document.getElementById("confirmBtn");
+
+    let selectedEventId = null;
+
+    const calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+        initialView: 'dayGridMonth',
+
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek'
+        },
+
+        events: async (info, successCallback, failureCallback) => {
+            try {
+                const res = await fetch(`/events/calendarData/<%= templateId %>`);
+                const data = await res.json();
+                successCallback(data);
+            } catch (err) {
+                failureCallback(err);
+            }
+        },
+
+        eventClick: function(info) {
+            selectedEventId = info.event.id;
+
+            popupTitle.innerText = info.event.title;
+            popupDetails.innerHTML = `
+                <strong>Date:</strong> ${info.event.start.toLocaleString()}<br>
+                <strong>Location:</strong> ${info.event.extendedProps.location}
+            `;
+
+            popup.style.display = "block";
+        }
+    });
+
+    calendar.render();
+
+    cancelBtn.addEventListener("click", () => {
+        popup.style.display = "none";
+        selectedEventId = null;
+    });
+
+    confirmBtn.addEventListener("click", async () => {
+        if (!selectedEventId) return;
+
+    const res = await fetch(`/events/registerOccurrence/${selectedEventId}`, {
+        method: "POST"
+    })
+
+
+        const text = await res.text();
+
+        popup.style.display = "none";
+        selectedEventId = null;
+
+        // SUCCESS MESSAGE IN PAGE instead of alert
+        const msgBox = document.createElement("div");
+        msgBox.className = "alert alert-success mt-3";
+        msgBox.innerText = text;
+        document.querySelector("main").prepend(msgBox);
+
+        calendar.refetchEvents();
+    });
+});
+</script>
+
+<%- include('partials/footer') %>

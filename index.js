@@ -22,8 +22,7 @@ app.use(
     })
 );
 
-
-
+// --- 3. DATABASE CONNECTION ---
 // const knex = require("knex")({
 //     client: "pg",
 //     connection: {
@@ -36,30 +35,30 @@ app.use(
 //     }
 // });
 
-// Jaewon
-const knex = require("knex")({
-    client: "pg",
-    connection: {
-        host: process.env.RDS_HOSTNAME || "localhost",
-        user: process.env.RDS_USERNAME || "postgres",
-        password: process.env.RDS_PASSWORD || "admin",
-        database: process.env.RDS_NAME || "ellarises",
-        port: process.env.RDS_PORT || 5432,
-        ssl: process.env.DB_SSL ? {rejectUnauthorized: false} : false
-    }
-});
-
-// ryan
+// for local use
 // const knex = require("knex")({
 //     client: "pg",
 //     connection: {
-//         host : process.env.DB_HOST || "localhost",
-//         user : process.env.DB_USER || "postgres",
-//         password : process.env.DB_PASSWORD || "admin1234",
-//         database : process.env.DB_NAME || "ellarises",
-//         port : process.env.DB_PORT || 5432  // PostgreSQL 16 typically uses port 5434
+//         host: process.env.RDS_HOSTNAME || "postgres",
+//         user: process.env.RDS_USERNAME || "postgres",
+//         password: process.env.RDS_PASSWORD || "admin1234",
+//         database: process.env.RDS_NAME || "ebdb",
+//         port: process.env.RDS_PORT || 5432,
+//         ssl: process.env.DB_SSL ? {rejectUnauthorized: false} : false
 //     }
 // });
+
+// for local use
+const knex = require("knex")({
+    client: "pg",
+    connection: {
+        host : process.env.DB_HOST || "localhost",
+        user : process.env.DB_USER || "postgres",
+        password : process.env.DB_PASSWORD || "admin1234",
+        database : process.env.DB_NAME || "ellarises",
+        port : process.env.DB_PORT || 5432  // PostgreSQL 16 typically uses port 5434
+    }
+});
 
 
 
@@ -574,7 +573,9 @@ app.get('/profile', isLogged, async (req, res) => {
                 'pr.registrationstatus'
             )
             .where('pr.participantid', participant.participantid)
-            .orderBy('eo.eventdatetimestart', 'desc');
+            .andWhere('eo.eventdatetimestart', '>=', knex.fn.now())   // 👈 SHOW ONLY UPCOMING EVENTS
+            .orderBy('eo.eventdatetimestart', 'asc');                // 👈 Sort future → soonest first
+
 
         res.render('profile', {
             title: "My Profile",
@@ -693,6 +694,109 @@ app.post('/events/register/:templateId', isLogged, async (req, res) => {
     } catch (err) {
         console.error("Registration Error:", err);
         return res.redirect('/events?msg=error');
+    }
+});
+
+app.post('/events/registerOccurrence/:occurrenceId', isLogged, async (req, res) => {
+    const occurrenceId = req.params.occurrenceId;
+    const email = req.session.user.id;
+
+    try {
+        // A. Find Participant
+        const participant = await knex('participantinfo')
+            .where({ participantemail: email })
+            .first();
+
+        if (!participant) {
+            return res.status(400).send("Participant not found.");
+        }
+
+        // B. Check Occurrence Exists
+        const occurrence = await knex('eventoccurrences')
+            .where({ eventoccurrenceid: occurrenceId })
+            .first();
+
+        if (!occurrence) {
+            return res.status(400).send("Event occurrence not found.");
+        }
+
+        // C. Check if Already Registered
+        const existing = await knex('participantregistrations')
+            .where({
+                participantid: participant.participantid,
+                eventoccurrenceid: occurrenceId
+            })
+            .first();
+
+        if (existing) {
+            return res.status(400).send("You are already registered.");
+        }
+
+        // D. Register the participant
+        await knex('participantregistrations').insert({
+            participantid: participant.participantid,
+            eventoccurrenceid: occurrenceId,
+            registrationcreatedat: new Date(),
+            registrationstatus: 'Registered'
+        });
+
+        return res.send("Successfully registered!");
+
+    } catch (err) {
+        console.error("Registration Error:", err);
+        return res.status(500).send("Error registering for event.");
+    }
+});
+
+
+app.get('/events/calendar/:templateId', isLogged, async (req, res) => {
+    const templateId = req.params.templateId;
+
+    try {
+        const template = await knex('eventtemplates')
+            .where('eventtemplateid', templateId)
+            .first();
+
+        res.render('eventCalendar', {
+            title: template?.eventname || 'Event Calendar',
+            templateId
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.redirect('/events?msg=error');
+    }
+});
+
+
+app.get('/events/calendarData/:templateId', isLogged, async (req, res) => {
+    const templateId = req.params.templateId;
+
+    try {
+        const rawEvents = await knex('eventoccurrences')
+            .join('eventtemplates', 'eventoccurrences.eventtemplateid', 'eventtemplates.eventtemplateid')
+            .where('eventoccurrences.eventtemplateid', templateId)
+            .select(
+                'eventoccurrences.eventoccurrenceid',
+                'eventtemplates.eventname',
+                'eventoccurrences.eventdatetimestart',
+                'eventoccurrences.eventdatetimeend',
+                'eventoccurrences.eventlocation'
+            );
+
+        const events = rawEvents.map(e => ({
+            id: e.eventoccurrenceid,
+            title: e.eventname,
+            start: e.eventdatetimestart,
+            end: e.eventdatetimeend,
+            location: e.eventlocation
+        }));
+
+        res.json(events);
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Error loading events" });
     }
 });
 
