@@ -26,7 +26,7 @@ app.use(
 const knex = require("knex")({
     client: "pg",
     connection: {
-        host: process.env.RDS_HOSTNAME || "postgres",
+        host: process.env.RDS_HOSTNAME || "localhost",
         user: process.env.RDS_USERNAME || "postgres",
         password: process.env.RDS_PASSWORD || "admin",
         database: process.env.RDS_NAME || "ellarises",
