@@ -3,7 +3,7 @@
 <main class="container my-5" style="max-width: 700px;">
     <div class="card shadow border-0 rounded-4">
         <div class="card-header bg-white border-0 py-4 text-center">
-            <h2 class="fw-bold text-dark mb-0">Add New Participant</h2>
+            <h2 class="fw-bold text-dark mb-0">Add New User</h2>
         </div>
         <div class="card-body p-4">
             <form action="/participants/add" method="POST">
@@ -33,7 +33,6 @@
                         <label class="form-label">Role</label>
                         <select name="role" class="form-select rounded-pill">
                             <option value="participant">Participant</option>
-                            <option value="manager">Manager</option>
                             <option value="admin">Admin</option>
                         </select>
                     </div>
@@ -60,7 +59,7 @@
                 </div>
 
                 <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-custom-pink rounded-pill fw-bold py-2">Create Participant</button>
+                    <button type="submit" class="btn btn-custom-pink rounded-pill fw-bold py-2">Create User</button>
                     <a href="/participants" class="btn btn-outline-secondary rounded-pill fw-bold py-2">Cancel</a>
                 </div>
             </form>

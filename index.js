@@ -22,7 +22,21 @@ app.use(
     })
 );
 
-// --- 3. DATABASE CONNECTION ---
+
+
+// const knex = require("knex")({
+//     client: "pg",
+//     connection: {
+//         host: process.env.RDS_HOSTNAME || "postgres",
+//         user: process.env.RDS_USERNAME || "postgres",
+//         password: process.env.RDS_PASSWORD || "admin1234",
+//         database: process.env.RDS_NAME || "ebdb",
+//         port: process.env.RDS_PORT || 5432,
+//         ssl: process.env.DB_SSL ? {rejectUnauthorized: false} : false
+//     }
+// });
+
+// Jaewon
 const knex = require("knex")({
     client: "pg",
     connection: {
@@ -35,7 +49,7 @@ const knex = require("knex")({
     }
 });
 
-// for local use
+// ryan
 // const knex = require("knex")({
 //     client: "pg",
 //     connection: {
@@ -692,7 +706,98 @@ app.post('/milestones/delete/:id', isLogged, isManager, async (req, res) => {
 });
 // --- SURVEYS ROUTES ---
 
-// index.js
+// ==========================================
+// --- USER MAINTENANCE ROUTES (Admin) ---
+// ==========================================
+
+// 1. 사용자 목록 조회 (User List)
+app.get('/users', isLogged, isManager, async (req, res) => {
+    const search = req.query.search || '';
+    try {
+        const users = await knex('participantinfo')
+            .where(builder => {
+                if (search) {
+                    builder.where('participantfirstname', 'ilike', `%${search}%`)
+                        .orWhere('participantlastname', 'ilike', `%${search}%`)
+                        .orWhere('participantemail', 'ilike', `%${search}%`);
+                }
+            })
+            .orderBy('participantid', 'asc');
+        
+        res.render('users', { title: 'User Maintenance', users, search });
+    } catch (err) { console.error(err); res.status(500).send("Error loading users."); }
+});
+
+// ✅ 2. 사용자 상세 보기 (User Detail - Profile, Events, Milestones)
+app.get('/users/view/:id', isLogged, isManager, async (req, res) => {
+    const userId = req.params.id;
+    try {
+        // A. Personal Profile
+        const user = await knex('participantinfo')
+            .where({ participantid: userId })
+            .first();
+
+        if (!user) return res.status(404).send("User not found");
+
+        // B. Registered Events (Join Registration -> Occurrence -> Template)
+        const events = await knex('participantregistrations')
+            .join('eventoccurrences', 'participantregistrations.eventoccurrenceid', 'eventoccurrences.eventoccurrenceid')
+            .join('eventtemplates', 'eventoccurrences.eventtemplateid', 'eventtemplates.eventtemplateid')
+            .select(
+                'eventtemplates.eventname',
+                'eventoccurrences.eventdatetimestart',
+                'eventoccurrences.eventlocation',
+                'participantregistrations.registrationstatus'
+            )
+            .where('participantregistrations.participantid', userId)
+            .orderBy('eventoccurrences.eventdatetimestart', 'desc');
+
+        // C. Milestones
+        const milestones = await knex('participantmilestones')
+            .join('milestones', 'participantmilestones.milestoneid', 'milestones.milestoneid')
+            .select('milestones.milestonetitle', 'participantmilestones.milestonedate')
+            .where('participantmilestones.participantid', userId)
+            .orderBy('participantmilestones.milestonedate', 'desc');
+
+        res.render('userDetail', { title: 'User Details', user, events, milestones });
+
+    } catch (err) { console.error(err); res.status(500).send("Error loading user details."); }
+});
+
+// 3. 사용자 추가 페이지 (GET) - 기존 createUser 라우트 재활용 가능하지만 별도로 만듦
+app.get('/users/add', isLogged, isManager, (req, res) => {
+    res.render('addUser', { title: 'Add New User' });
+});
+
+// 4. 사용자 추가 로직 (POST)
+app.post('/users/add', isLogged, isManager, async (req, res) => {
+    const { firstName, lastName, email, password, role } = req.body;
+    try {
+        const maxIdResult = await knex('participantinfo').max('participantid as maxId').first();
+        const nextId = (maxIdResult.maxId || 0) + 1;
+
+        await knex('participantinfo').insert({
+            participantid: nextId,
+            participantfirstname: firstName,
+            participantlastname: lastName,
+            participantemail: email,
+            participantpassword: password,
+            participantrole: role
+        });
+        res.redirect('/users');
+    } catch (err) { console.error(err); res.status(500).send("Error adding user."); }
+});
+
+// 5. 사용자 삭제 (POST)
+app.post('/users/delete/:id', isLogged, isManager, async (req, res) => {
+    try {
+        await knex('participantinfo').where({ participantid: req.params.id }).del();
+        res.redirect('/users');
+    } catch (err) { 
+        console.error(err); 
+        res.status(500).send("Error deleting user. Check for related records."); 
+    }
+});
 
 // 설문조사 목록 (검색 기능 추가됨)
 app.get('/surveys', isLogged, async (req, res) => {
