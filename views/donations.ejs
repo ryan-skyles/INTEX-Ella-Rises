@@ -1,52 +1,130 @@
-<!-- 
- Professionalism 4
-Ability to add user information and donation 3 -->
 <%- include('partials/header') %>
 
-<header class="custom-bg-pink py-5 text-center mb-4">
-    <div class="container">
-        <h1 class="display-5 fw-bold text-dark">Donation Records</h1>
-        <p class="lead text-secondary">Track all contributions and donors.</p>
-    </div>
-</header>
+<main class="container my-5" style="max-width: 900px;">
+    
+    <div class="row g-5">
+        <div class="col-md-5 order-md-last">
+            
+            <h4 class="mb-3">
+                <span class="text-primary fw-bold">Rise With Ella</span>
+                <span class="text-muted small d-block">Empowering Futures Together</span>
+            </h4>
+            
+            <div class="card shadow-sm border-0 rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <p class="text-muted mb-4 fst-italic">
+                        "We believe in the power of community and the brilliance of our youth."
+                    </p>
 
-<main class="container mb-5 flex-grow-1">
+                    <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Why We’re Fundraising</h6>
+                    <p class="small text-muted mb-2">Your generous contribution will impact these programs:</p>
+                    <ul class="list-unstyled small text-secondary mb-4">
+                        <li class="mb-2 d-flex">
+                            <i class="bi bi-check-circle-fill text-custom-pink me-2"></i>
+                            <span><strong>Ella Rises Youth Summits:</strong> Day camps across Utah focused on the Ella Rises Experience*.</span>
+                        </li>
+                        <li class="mb-2 d-flex">
+                            <i class="bi bi-check-circle-fill text-custom-pink me-2"></i>
+                            <span><strong>Educational Tours:</strong> Visits to local universities and businesses.</span>
+                        </li>
+                        <li class="mb-2 d-flex">
+                            <i class="bi bi-check-circle-fill text-custom-pink me-2"></i>
+                            <span><strong>STEM & Arts:</strong> Including our Mariachi band and Ballet Folklorico.</span>
+                        </li>
+                    </ul>
+                    
+                    <div class="alert alert-light border small text-muted mb-4">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <strong>*The Ella Rises Experience</strong> is a joyful blend of art, STEM, and educational exploration — designed to build confidence in each girl's divine worth.
+                    </div>
 
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <form action="/admin/donations" method="GET" class="d-flex">
-                <input type="text" name="search" class="form-control me-2 rounded-pill" placeholder="Search donors..." value="<%= typeof search != 'undefined' ? search : '' %>">
-                <button type="submit" class="btn btn-outline-primary rounded-pill">Search</button>
-            </form>
+                    
+
+                    <div class="text-center mt-4">
+                        <p class="mb-1 fw-bold text-dark">With your support, Ella Rises.</p>
+                        <small class="text-muted">With gratitude,<br>Nadia Cates, Founder</small>
+                    </div>
+
+                </div>
+            </div>
         </div>
-    </div>
 
-    <div class="card shadow border-0 rounded-4 overflow-hidden">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light">
-                    <tr>
-                        <th class="p-3">Date</th>
-                        <th class="p-3">Donor Name</th>
-                        <th class="p-3">Email</th>
-                        <th class="p-3">Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% if (donations.length > 0) { %>
-                        <% donations.forEach(d => { %>
-                        <tr>
-                            <td class="p-3"><%= new Date(d.DonationDate).toLocaleDateString() %></td>
-                            <td class="p-3 fw-bold"><%= d.ParticipantFirstName %> <%= d.ParticipantLastName %></td>
-                            <td class="p-3 text-muted"><%= d.ParticipantEmail %></td>
-                            <td class="p-3 fw-bold text-success">$<%= d.DonationAmount %></td>
-                        </tr>
-                        <% }) %>
-                    <% } else { %>
-                        <tr><td colspan="4" class="text-center p-4">No donation records found.</td></tr>
-                    <% } %>
-                </tbody>
-            </table>
+        <div class="col-md-7">
+            <h4 class="mb-3 fw-bold">Make a Donation</h4>
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-4">
+                    <form action="/donate" method="POST" class="needs-validation">
+                        
+                        <h6 class="mb-3 fw-bold text-secondary">Select Amount</h6>
+                        <div class="btn-group w-100 mb-3" role="group">
+                            <input type="radio" class="btn-check" name="amountBtn" id="btn25" autocomplete="off" onclick="document.getElementById('customAmount').value=25">
+                            <label class="btn btn-outline-primary" for="btn25">$25</label>
+
+                            <input type="radio" class="btn-check" name="amountBtn" id="btn50" autocomplete="off" onclick="document.getElementById('customAmount').value=50">
+                            <label class="btn btn-outline-primary" for="btn50">$50</label>
+
+                            <input type="radio" class="btn-check" name="amountBtn" id="btn100" autocomplete="off" onclick="document.getElementById('customAmount').value=100">
+                            <label class="btn btn-outline-primary" for="btn100">$100</label>
+                        </div>
+                        
+                        <div class="input-group mb-4">
+                            <span class="input-group-text">$</span>
+                            <input type="number" name="amount" id="customAmount" class="form-control" placeholder="Enter custom amount" required min="1">
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h6 class="mb-3 fw-bold text-secondary">Donor Information</h6>
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <label class="form-label small text-muted fw-bold">First name</label>
+                                <input type="text" name="firstName" class="form-control rounded-pill" required 
+                                       value="<%= (locals.user && locals.user.firstName) ? locals.user.firstName : '' %>">
+                            </div>
+
+                            <div class="col-sm-6">
+                                <label class="form-label small text-muted fw-bold">Last name</label>
+                                <input type="text" name="lastName" class="form-control rounded-pill" required
+                                       value="<%= (locals.user && locals.user.lastName) ? locals.user.lastName : '' %>">
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label small text-muted fw-bold">Email</label>
+                                <input type="email" name="email" class="form-control rounded-pill" placeholder="you@example.com" required
+                                       value="<%= (locals.user && locals.user.id) ? locals.user.id : '' %>">
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h6 class="mb-3 fw-bold text-secondary">Payment Details <span class="badge bg-secondary ms-1">Secure</span></h6>
+                        <div class="row gy-3">
+                            <div class="col-md-6">
+                                <label class="form-label small text-muted fw-bold">Name on card</label>
+                                <input type="text" class="form-control rounded-pill" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-muted fw-bold">Credit card number</label>
+                                <input type="text" class="form-control rounded-pill" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted fw-bold">Expiration</label>
+                                <input type="text" class="form-control rounded-pill" placeholder="MM/YY" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted fw-bold">CVV</label>
+                                <input type="text" class="form-control rounded-pill" required>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <button class="w-100 btn btn-custom-pink btn-lg rounded-pill fw-bold shadow-sm" type="submit">
+                            Complete Donation
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </main>

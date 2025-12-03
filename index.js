@@ -1198,7 +1198,71 @@ app.get('/dashboard', isLogged, isManager, async (req, res) => {
     });
 });
 
+// ==========================================
+// --- PUBLIC DONATION ROUTES (Visitor) ---
+// ==========================================
 
+// 1. 기부 페이지 보여주기 (GET)
+// 로그인 안 한 사람도 접근 가능해야 하므로 isLogged 미들웨어 뺌
+app.get('/donate', (req, res) => {
+    // 로그인했다면 이메일과 이름을 미리 채워주기 위해 user 정보를 넘김
+    res.render('donations', { 
+        title: 'Donate to Ella Rises',
+        user: req.session.user || null 
+    });
+});
+
+// 2. 기부 처리 로직 (POST)
+app.post('/donate', async (req, res) => {
+    const { email, amount, firstName, lastName } = req.body;
+
+    try {
+        // [1단계] 기부자가 기존 회원인지 확인 (이메일로 검색)
+        let participant = await knex('participantinfo')
+            .where({ participantemail: email })
+            .first();
+
+        let participantId;
+
+        // [2단계] 회원이 아니면 -> 새로 등록 (참가자로 등록)
+        if (!participant) {
+            const maxIdResult = await knex('participantinfo').max('participantid as maxId').first();
+            const nextId = (maxIdResult.maxId || 0) + 1;
+            
+            participantId = nextId;
+
+            await knex('participantinfo').insert({
+                participantid: participantId,
+                participantemail: email,
+                participantfirstname: firstName,
+                participantlastname: lastName,
+                participantrole: 'donor' // 역할: 기부자(donor) 또는 participant
+                // 비밀번호는 없으므로 나중에 로그인하려면 회원가입 필요
+            });
+        } else {
+            participantId = participant.participantid;
+        }
+
+        // [3단계] 기부 내역 저장 (ParticipantDonations 테이블)
+        const maxDonationId = await knex('participantdonations').max('participantdonationid as maxId').first();
+        const nextDonationId = (maxDonationId.maxId || 0) + 1;
+
+        await knex('participantdonations').insert({
+            participantdonationid: nextDonationId,
+            participantid: participantId,
+            donationamount: amount,
+            donationdate: new Date(), // 오늘 날짜
+            donationno: 1 // 기부 횟수 (필요시 로직 추가)
+        });
+
+        // [4단계] 감사 페이지 또는 홈으로 이동
+        res.send("<script>alert('Thank you for your generous donation!'); window.location.href='/';</script>");
+
+    } catch (err) {
+        console.error("Donation Error:", err);
+        res.status(500).send("Error processing donation: " + err.message);
+    }
+});
 // 418 Teapot
 app.get('/teapot', (req, res) => {
     res.status(418).render('teapot', { title: '418' });
