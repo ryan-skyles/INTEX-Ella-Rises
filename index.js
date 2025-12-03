@@ -23,17 +23,17 @@ app.use(
 );
 
 // --- 3. DATABASE CONNECTION ---
-const knex = require("knex")({
-    client: "pg",
-    connection: {
-        host: process.env.RDS_HOSTNAME || "postgres",
-        user: process.env.RDS_USERNAME || "postgres",
-        password: process.env.RDS_PASSWORD || "admin1234",
-        database: process.env.RDS_NAME || "ebdb",
-        port: process.env.RDS_PORT || 5432,
-        ssl: process.env.DB_SSL ? {rejectUnauthorized: false} : false
-    }
-});
+// const knex = require("knex")({
+//     client: "pg",
+//     connection: {
+//         host: process.env.RDS_HOSTNAME || "postgres",
+//         user: process.env.RDS_USERNAME || "postgres",
+//         password: process.env.RDS_PASSWORD || "admin1234",
+//         database: process.env.RDS_NAME || "ebdb",
+//         port: process.env.RDS_PORT || 5432,
+//         ssl: process.env.DB_SSL ? {rejectUnauthorized: false} : false
+//     }
+// });
 
 // for local use
 // const knex = require("knex")({
@@ -690,6 +690,58 @@ app.post('/events/register/:templateId', isLogged, async (req, res) => {
         return res.redirect('/events?msg=error');
     }
 });
+
+app.post('/events/registerOccurrence/:occurrenceId', isLogged, async (req, res) => {
+    const occurrenceId = req.params.occurrenceId;
+    const email = req.session.user.id;
+
+    try {
+        // A. Find Participant
+        const participant = await knex('participantinfo')
+            .where({ participantemail: email })
+            .first();
+
+        if (!participant) {
+            return res.status(400).send("Participant not found.");
+        }
+
+        // B. Check Occurrence Exists
+        const occurrence = await knex('eventoccurrences')
+            .where({ eventoccurrenceid: occurrenceId })
+            .first();
+
+        if (!occurrence) {
+            return res.status(400).send("Event occurrence not found.");
+        }
+
+        // C. Check if Already Registered
+        const existing = await knex('participantregistrations')
+            .where({
+                participantid: participant.participantid,
+                eventoccurrenceid: occurrenceId
+            })
+            .first();
+
+        if (existing) {
+            return res.status(400).send("You are already registered.");
+        }
+
+        // D. Register the participant
+        await knex('participantregistrations').insert({
+            participantid: participant.participantid,
+            eventoccurrenceid: occurrenceId,
+            registrationcreatedat: new Date(),
+            registrationstatus: 'Registered'
+        });
+
+        return res.send("Successfully registered!");
+
+    } catch (err) {
+        console.error("Registration Error:", err);
+        return res.status(500).send("Error registering for event.");
+    }
+});
+
 
 app.get('/events/calendar/:templateId', isLogged, async (req, res) => {
     const templateId = req.params.templateId;
