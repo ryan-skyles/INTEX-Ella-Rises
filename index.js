@@ -573,7 +573,9 @@ app.get('/profile', isLogged, async (req, res) => {
                 'pr.registrationstatus'
             )
             .where('pr.participantid', participant.participantid)
-            .orderBy('eo.eventdatetimestart', 'desc');
+            .andWhere('eo.eventdatetimestart', '>=', knex.fn.now())   // 👈 SHOW ONLY UPCOMING EVENTS
+            .orderBy('eo.eventdatetimestart', 'asc');                // 👈 Sort future → soonest first
+
 
         res.render('profile', {
             title: "My Profile",
