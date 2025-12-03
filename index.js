@@ -956,7 +956,44 @@ app.get('/surveys/:id', isLogged, async (req, res) => {
 // ==========================================
 // --- DONATION CRUD ROUTES (Admin Only) ---
 // ==========================================
+// 1. 기부금 목록 조회 (이 부분이 없어서 에러가 난 것임!)
+app.get('/admin/donations', isLogged, isManager, async (req, res) => {
+    const search = req.query.search || '';
+    try {
+        // A. 목록 데이터 가져오기
+        const donations = await knex('participantdonations')
+            .join('participantinfo', 'participantdonations.participantid', 'participantinfo.participantid')
+            .select(
+                'participantdonations.*', 
+                'participantinfo.participantemail', 
+                'participantinfo.participantfirstname',
+                'participantinfo.participantlastname'
+            )
+            .where(builder => {
+                if(search) {
+                    builder.where('participantinfo.participantfirstname', 'ilike', `%${search}%`)
+                           .orWhere('participantinfo.participantlastname', 'ilike', `%${search}%`);
+                }
+            })
+            // 날짜 내림차순 (NULL은 맨 뒤로)
+            .orderBy('donationdate', 'desc', 'last'); 
 
+        // B. 총 기부금 계산
+        const sumResult = await knex('participantdonations').sum('donationamount as total');
+        const grandTotal = sumResult[0].total || 0;
+
+        res.render('viewDonations', { 
+            title: 'Donation Records', 
+            donations, 
+            search,
+            grandTotal 
+        });
+
+    } catch (err) { 
+        console.error(err); 
+        res.status(500).send("Error loading donations."); 
+    }
+});
 // 1. 기부금 추가 페이지 (GET)
 app.get('/admin/donations/add', isLogged, isManager, async (req, res) => {
     try {
