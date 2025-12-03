@@ -953,42 +953,94 @@ app.get('/surveys/:id', isLogged, async (req, res) => {
 });
 // index.js
 
-// 8-B. Donation Maintenance (Admin View - Records & Total)
-// index.js
+// ==========================================
+// --- DONATION CRUD ROUTES (Admin Only) ---
+// ==========================================
 
-app.get('/admin/donations', isLogged, isManager, async (req, res) => {
-    const search = req.query.search || '';
+// 1. 기부금 추가 페이지 (GET)
+app.get('/admin/donations/add', isLogged, isManager, async (req, res) => {
     try {
-        const donations = await knex('participantdonations')
-            .join('participantinfo', 'participantdonations.participantid', 'participantinfo.participantid')
-            .select(
-                'participantdonations.*', 
-                'participantinfo.participantemail', 
-                'participantinfo.participantfirstname',
-                'participantinfo.participantlastname'
-            )
-            .where(builder => {
-                if(search) {
-                    builder.where('participantinfo.participantfirstname', 'ilike', `%${search}%`)
-                           .orWhere('participantinfo.participantlastname', 'ilike', `%${search}%`);
-                }
-            })
-            // ✅ 수정된 부분: 세 번째 인자로 'last'를 추가하여 NULL 값을 맨 뒤로 보냅니다.
-            .orderBy('donationdate', 'desc', 'last'); 
+        // 기부자 선택을 위해 참가자 목록 가져오기
+        const participants = await knex('participantinfo')
+            .select('participantid', 'participantfirstname', 'participantlastname', 'participantemail')
+            .orderBy('participantfirstname');
+        
+        res.render('addDonation', { title: 'Add Donation', participants });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error loading add page.");
+    }
+});
 
-        const sumResult = await knex('participantdonations').sum('donationamount as total');
-        const grandTotal = sumResult[0].total || 0;
+// 2. 기부금 추가 로직 (POST)
+app.post('/admin/donations/add', isLogged, isManager, async (req, res) => {
+    const { participantId, amount, date } = req.body;
+    try {
+        // ID 자동 계산
+        const maxIdResult = await knex('participantdonations').max('participantdonationid as maxId').first();
+        const nextId = (maxIdResult.maxId || 0) + 1;
 
-        res.render('viewDonations', { 
-            title: 'Donation Records', 
-            donations, 
-            search,
-            grandTotal 
+        await knex('participantdonations').insert({
+            participantdonationid: nextId,
+            participantid: participantId,
+            donationamount: amount,
+            donationdate: date,
+            donationno: 1 // 기본값
         });
+        res.redirect('/admin/donations');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error adding donation.");
+    }
+});
 
-    } catch (err) { 
-        console.error(err); 
-        res.status(500).send(err.message); 
+// 3. 기부금 수정 페이지 (GET)
+app.get('/admin/donations/edit/:id', isLogged, isManager, async (req, res) => {
+    try {
+        const donation = await knex('participantdonations')
+            .join('participantinfo', 'participantdonations.participantid', 'participantinfo.participantid')
+            .select('participantdonations.*', 'participantinfo.participantfirstname', 'participantinfo.participantlastname')
+            .where({ participantdonationid: req.params.id })
+            .first();
+
+        if (donation) {
+            res.render('editDonation', { title: 'Edit Donation', donation });
+        } else {
+            res.redirect('/admin/donations');
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error loading donation.");
+    }
+});
+
+// 4. 기부금 수정 로직 (POST)
+app.post('/admin/donations/edit/:id', isLogged, isManager, async (req, res) => {
+    const { amount, date } = req.body;
+    try {
+        await knex('participantdonations')
+            .where({ participantdonationid: req.params.id })
+            .update({
+                donationamount: amount,
+                donationdate: date
+            });
+        res.redirect('/admin/donations');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error updating donation.");
+    }
+});
+
+// 5. 기부금 삭제 로직 (POST)
+app.post('/admin/donations/delete/:id', isLogged, isManager, async (req, res) => {
+    try {
+        await knex('participantdonations')
+            .where({ participantdonationid: req.params.id })
+            .del();
+        res.redirect('/admin/donations');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error deleting donation.");
     }
 });
 
