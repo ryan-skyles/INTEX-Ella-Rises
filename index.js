@@ -262,7 +262,9 @@ app.get('/participants', isLogged, async (req, res) => {
                 if (search) {
                     builder.where('participantfirstname', 'ilike', `%${search}%`)
                         .orWhere('participantlastname', 'ilike', `%${search}%`)
-                        .orWhere('participantemail', 'ilike', `%${search}%`);
+                        .orWhere('participantemail', 'ilike', `%${search}%`)
+                        // ✅ Full Name Search: "First Last" 형태로 합쳐서 검색
+                        .orWhereRaw("participantfirstname || ' ' || participantlastname ILIKE ?", [term]);;
                 }
             })
             .orderBy('participantid', 'asc');
@@ -801,7 +803,8 @@ app.get('/users', isLogged, isManager, async (req, res) => {
                 if (search) {
                     builder.where('participantfirstname', 'ilike', `%${search}%`)
                         .orWhere('participantlastname', 'ilike', `%${search}%`)
-                        .orWhere('participantemail', 'ilike', `%${search}%`);
+                        .orWhere('participantemail', 'ilike', `%${search}%`)
+                        .orWhereRaw("participantfirstname || ' ' || participantlastname ILIKE ?", [term]);
                 }
             })
             .orderBy('participantid', 'asc');
@@ -972,7 +975,8 @@ app.get('/admin/donations', isLogged, isManager, async (req, res) => {
             .where(builder => {
                 if(search) {
                     builder.where('participantinfo.participantfirstname', 'ilike', `%${search}%`)
-                           .orWhere('participantinfo.participantlastname', 'ilike', `%${search}%`);
+                           .orWhere('participantinfo.participantlastname', 'ilike', `%${search}%`)
+                           .orWhereRaw("participantinfo.participantfirstname || ' ' || participantinfo.participantlastname ILIKE ?", [term]);
                 }
             })
             // 날짜 내림차순 (NULL은 맨 뒤로)
