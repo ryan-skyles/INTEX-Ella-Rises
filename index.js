@@ -23,29 +23,29 @@ app.use(
 );
 
 // --- 3. DATABASE CONNECTION ---
-const knex = require("knex")({
-    client: "pg",
-    connection: {
-        host: process.env.RDS_HOSTNAME || "postgres",
-        user: process.env.RDS_USERNAME || "postgres",
-        password: process.env.RDS_PASSWORD || "admin1234",
-        database: process.env.RDS_NAME || "ebdb",
-        port: process.env.RDS_PORT || 5432,
-        ssl: process.env.DB_SSL ? {rejectUnauthorized: false} : false
-    }
-});
-
-// for local use
 // const knex = require("knex")({
 //     client: "pg",
 //     connection: {
-//         host : process.env.DB_HOST || "localhost",
-//         user : process.env.DB_USER || "postgres",
-//         password : process.env.DB_PASSWORD || "admin1234",
-//         database : process.env.DB_NAME || "ellarises",
-//         port : process.env.DB_PORT || 5432  // PostgreSQL 16 typically uses port 5434
+//         host: process.env.RDS_HOSTNAME || "postgres",
+//         user: process.env.RDS_USERNAME || "postgres",
+//         password: process.env.RDS_PASSWORD || "admin1234",
+//         database: process.env.RDS_NAME || "ebdb",
+//         port: process.env.RDS_PORT || 5432,
+//         ssl: process.env.DB_SSL ? {rejectUnauthorized: false} : false
 //     }
 // });
+
+// for local use
+const knex = require("knex")({
+    client: "pg",
+    connection: {
+        host : process.env.DB_HOST || "localhost",
+        user : process.env.DB_USER || "postgres",
+        password : process.env.DB_PASSWORD || "admin1234",
+        database : process.env.DB_NAME || "ellarises",
+        port : process.env.DB_PORT || 5432  // PostgreSQL 16 typically uses port 5434
+    }
+});
 
 
 
@@ -593,6 +593,57 @@ app.post('/events/register/:templateId', isLogged, async (req, res) => {
     } catch (err) {
         console.error("Registration Error:", err);
         return res.redirect('/events?msg=error');
+    }
+});
+
+app.get('/events/calendar/:templateId', isLogged, async (req, res) => {
+    const templateId = req.params.templateId;
+
+    try {
+        const template = await knex('eventtemplates')
+            .where('eventtemplateid', templateId)
+            .first();
+
+        res.render('eventCalendar', {
+            title: template?.eventname || 'Event Calendar',
+            templateId
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.redirect('/events?msg=error');
+    }
+});
+
+
+app.get('/events/calendarData/:templateId', isLogged, async (req, res) => {
+    const templateId = req.params.templateId;
+
+    try {
+        const rawEvents = await knex('eventoccurrences')
+            .join('eventtemplates', 'eventoccurrences.eventtemplateid', 'eventtemplates.eventtemplateid')
+            .where('eventoccurrences.eventtemplateid', templateId)
+            .select(
+                'eventoccurrences.eventoccurrenceid',
+                'eventtemplates.eventname',
+                'eventoccurrences.eventdatetimestart',
+                'eventoccurrences.eventdatetimeend',
+                'eventoccurrences.eventlocation'
+            );
+
+        const events = rawEvents.map(e => ({
+            id: e.eventoccurrenceid,
+            title: e.eventname,
+            start: e.eventdatetimestart,
+            end: e.eventdatetimeend,
+            location: e.eventlocation
+        }));
+
+        res.json(events);
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Error loading events" });
     }
 });
 

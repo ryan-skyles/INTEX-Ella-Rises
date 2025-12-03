@@ -1,0 +1,62 @@
+<%- include('partials/header') %>
+
+<header class="custom-bg-pink py-5 text-center mb-4">
+    <div class="container">
+        <h1 class="display-5 fw-bold text-dark"><%= title %></h1>
+        <p class="lead text-secondary">Select a date to register.</p>
+    </div>
+</header>
+
+<main class="container my-5">
+    <div id="calendar" class="shadow rounded-4 p-4 bg-white"></div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const calendarEl = document.getElementById('calendar');
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek'
+        },
+
+        events: async (info, successCallback, failureCallback) => {
+            try {
+                const res = await fetch(`/events/calendarData/<%= templateId %>`);
+                const data = await res.json();
+                successCallback(data);
+            } catch (err) {
+                console.error(err);
+                failureCallback(err);
+            }
+        },
+
+        eventClick: function(info) {
+            const loc = info.event.extendedProps.location;
+
+            if (confirm(`Register for "${info.event.title}" at ${loc} on ${info.event.start.toLocaleString()}?`)) {
+                
+                fetch(`/events/register/${info.event.id}`, {
+                    method: "POST"
+                })
+                .then(r => r.text())
+                .then(msg => {
+                    alert(msg);
+                    location.reload();
+                })
+                .catch(err => alert("Error: " + err));
+            }
+        }
+    });
+
+    calendar.render();
+});
+</script>
+
+<%- include('partials/footer') %>
