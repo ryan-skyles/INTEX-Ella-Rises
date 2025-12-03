@@ -254,17 +254,19 @@ app.get('/users', isLogged, isManager, async (req, res) => {
 // ==========================================
 
 // 1. 참가자 목록 조회 (검색 기능 포함)
+// 1. Participant List (Search Fixed)
 app.get('/participants', isLogged, async (req, res) => {
     const search = req.query.search || '';
     try {
         const participants = await knex('participantinfo')
             .where(builder => {
                 if (search) {
-                    builder.where('participantfirstname', 'ilike', `%${search}%`)
-                        .orWhere('participantlastname', 'ilike', `%${search}%`)
-                        .orWhere('participantemail', 'ilike', `%${search}%`)
-                        // ✅ Full Name Search: "First Last" 형태로 합쳐서 검색
-                        .orWhereRaw("participantfirstname || ' ' || participantlastname ILIKE ?", [term]);;
+                    const term = `%${search}%`; // Define term here
+                    builder.where('participantfirstname', 'ilike', term)
+                        .orWhere('participantlastname', 'ilike', term)
+                        .orWhere('participantemail', 'ilike', term)
+                        // Pass term as a binding parameter (second argument)
+                        .orWhereRaw("participantfirstname || ' ' || participantlastname ILIKE ?", [term]);
                 }
             })
             .orderBy('participantid', 'asc');
@@ -794,16 +796,18 @@ app.post('/milestones/delete/:id', isLogged, isManager, async (req, res) => {
 // --- USER MAINTENANCE ROUTES (Admin) ---
 // ==========================================
 
-// 1. 사용자 목록 조회 (User List)
+// 1. User List (Search Fixed)
 app.get('/users', isLogged, isManager, async (req, res) => {
     const search = req.query.search || '';
     try {
         const users = await knex('participantinfo')
             .where(builder => {
                 if (search) {
-                    builder.where('participantfirstname', 'ilike', `%${search}%`)
-                        .orWhere('participantlastname', 'ilike', `%${search}%`)
-                        .orWhere('participantemail', 'ilike', `%${search}%`)
+                    const term = `%${search}%`; // Define term here
+                    builder.where('participantfirstname', 'ilike', term)
+                        .orWhere('participantlastname', 'ilike', term)
+                        .orWhere('participantemail', 'ilike', term)
+                        // Pass term as a binding parameter
                         .orWhereRaw("participantfirstname || ' ' || participantlastname ILIKE ?", [term]);
                 }
             })
@@ -959,11 +963,10 @@ app.get('/surveys/:id', isLogged, async (req, res) => {
 // ==========================================
 // --- DONATION CRUD ROUTES (Admin Only) ---
 // ==========================================
-// 1. 기부금 목록 조회 (이 부분이 없어서 에러가 난 것임!)
+// 1. Donation List (Search Fixed)
 app.get('/admin/donations', isLogged, isManager, async (req, res) => {
     const search = req.query.search || '';
     try {
-        // A. 목록 데이터 가져오기
         const donations = await knex('participantdonations')
             .join('participantinfo', 'participantdonations.participantid', 'participantinfo.participantid')
             .select(
@@ -974,15 +977,15 @@ app.get('/admin/donations', isLogged, isManager, async (req, res) => {
             )
             .where(builder => {
                 if(search) {
-                    builder.where('participantinfo.participantfirstname', 'ilike', `%${search}%`)
-                           .orWhere('participantinfo.participantlastname', 'ilike', `%${search}%`)
+                    const term = `%${search}%`; // Define term here
+                    builder.where('participantinfo.participantfirstname', 'ilike', term)
+                           .orWhere('participantinfo.participantlastname', 'ilike', term)
+                           // Pass term as a binding parameter
                            .orWhereRaw("participantinfo.participantfirstname || ' ' || participantinfo.participantlastname ILIKE ?", [term]);
                 }
             })
-            // 날짜 내림차순 (NULL은 맨 뒤로)
             .orderBy('donationdate', 'desc', 'last'); 
 
-        // B. 총 기부금 계산
         const sumResult = await knex('participantdonations').sum('donationamount as total');
         const grandTotal = sumResult[0].total || 0;
 
