@@ -120,7 +120,72 @@ app.post('/login', async (req, res) => {
 app.get('/logout', (req, res) => {
     req.session.destroy(() => res.redirect('/'));
 });
+// ==========================================
+// --- ADMIN: REGISTER USER FOR EVENT ---
+// ==========================================
 
+// 1. 등록 페이지 보여주기 (GET)
+app.get('/admin/register-event', isLogged, isManager, async (req, res) => {
+    try {
+        // A. 모든 참가자 가져오기 (드롭다운용)
+        const participants = await knex('participantinfo')
+            .select('participantid', 'participantfirstname', 'participantlastname', 'participantemail')
+            .orderBy('participantfirstname');
+
+        // B. 예정된 이벤트 가져오기 (드롭다운용)
+        // EventOccurrences + EventTemplates 조인
+        const events = await knex('eventoccurrences')
+            .join('eventtemplates', 'eventoccurrences.eventtemplateid', 'eventtemplates.eventtemplateid')
+            .select(
+                'eventoccurrences.eventoccurrenceid',
+                'eventtemplates.eventname',
+                'eventoccurrences.eventdatetimestart',
+                'eventoccurrences.eventlocation'
+            )
+            .where('eventoccurrences.eventdatetimestart', '>=', new Date()) // 지난 이벤트 제외 (선택 사항)
+            .orderBy('eventoccurrences.eventdatetimestart', 'asc');
+
+        res.render('registerUserEvent', { title: 'Register User for Event', participants, events });
+
+    } catch (err) {
+        console.error("Load Register Page Error:", err);
+        res.status(500).send("Error loading registration page.");
+    }
+});
+
+// 2. 등록 처리 로직 (POST)
+app.post('/admin/register-event', isLogged, isManager, async (req, res) => {
+    const { participantId, eventOccurrenceId } = req.body;
+
+    try {
+        // 중복 등록 확인
+        const existing = await knex('participantregistrations')
+            .where({
+                participantid: participantId,
+                eventoccurrenceid: eventOccurrenceId
+            })
+            .first();
+
+        if (existing) {
+            return res.send("<script>alert('This user is already registered for this event.'); window.history.back();</script>");
+        }
+
+        // 등록 실행
+        await knex('participantregistrations').insert({
+            participantid: participantId,
+            eventoccurrenceid: eventOccurrenceId,
+            registrationcreatedat: new Date(),
+            registrationstatus: 'Registered'
+        });
+
+        // 성공 후 참가자 목록으로 이동 (또는 계속 등록)
+        res.send("<script>alert('Registration Successful!'); window.location.href='/participants';</script>");
+
+    } catch (err) {
+        console.error("Admin Register Error:", err);
+        res.status(500).send("Error registering user for event.");
+    }
+});
 // ==========================================
 // --- SIGN UP ROUTES (Create User) ---
 // ==========================================

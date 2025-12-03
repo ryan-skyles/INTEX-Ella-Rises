@@ -1,0 +1,48 @@
+<%- include('partials/header') %>
+
+<main class="container my-5" style="max-width: 600px;">
+    <div class="card shadow border-0 rounded-4">
+        <div class="card-header bg-white border-0 py-4 text-center">
+            <h2 class="fw-bold text-dark mb-0">Register User for Event</h2>
+            <p class="text-muted small">Manually assign a participant to an event.</p>
+        </div>
+        <div class="card-body p-4">
+            <form action="/admin/register-event" method="POST">
+                
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-secondary">Select Participant</label>
+                    <select name="participantId" class="form-select form-select-lg rounded-pill" required>
+                        <option value="" selected disabled>Choose a person...</option>
+                        <% participants.forEach(p => { %>
+                            <option value="<%= p.participantid %>">
+                                <%= p.participantfirstname %> <%= p.participantlastname %> (<%= p.participantemail %>)
+                            </option>
+                        <% }) %>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-secondary">Select Event</label>
+                    <select name="eventOccurrenceId" class="form-select form-select-lg rounded-pill" required>
+                        <option value="" selected disabled>Choose an event...</option>
+                        <% events.forEach(e => { %>
+                            <option value="<%= e.eventoccurrenceid %>">
+                                [<%= new Date(e.eventdatetimestart).toLocaleDateString() %>] <%= e.eventname %> - <%= e.eventlocation %>
+                            </option>
+                        <% }) %>
+                    </select>
+                </div>
+
+                <div class="d-grid gap-2 mt-5">
+                    <button type="submit" class="btn btn-success rounded-pill fw-bold py-3 shadow-sm">
+                        Confirm Registration
+                    </button>
+                    <a href="/participants" class="btn btn-outline-secondary rounded-pill fw-bold py-2">Cancel</a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</main>
+
+<%- include('partials/footer') %>
