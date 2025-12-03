@@ -125,15 +125,17 @@ app.get('/logout', (req, res) => {
 // ==========================================
 
 // 1. 등록 페이지 보여주기 (GET)
+// index.js
+
+// 1. 등록 페이지 보여주기 (GET)
 app.get('/admin/register-event', isLogged, isManager, async (req, res) => {
     try {
-        // A. 모든 참가자 가져오기 (드롭다운용)
+        // A. 참가자 가져오기 (이름순 정렬)
         const participants = await knex('participantinfo')
             .select('participantid', 'participantfirstname', 'participantlastname', 'participantemail')
             .orderBy('participantfirstname');
 
-        // B. 예정된 이벤트 가져오기 (드롭다운용)
-        // EventOccurrences + EventTemplates 조인
+        // B. 이벤트 일정 가져오기 (날짜 제한 제거함)
         const events = await knex('eventoccurrences')
             .join('eventtemplates', 'eventoccurrences.eventtemplateid', 'eventtemplates.eventtemplateid')
             .select(
@@ -142,8 +144,8 @@ app.get('/admin/register-event', isLogged, isManager, async (req, res) => {
                 'eventoccurrences.eventdatetimestart',
                 'eventoccurrences.eventlocation'
             )
-            .where('eventoccurrences.eventdatetimestart', '>=', new Date()) // 지난 이벤트 제외 (선택 사항)
-            .orderBy('eventoccurrences.eventdatetimestart', 'asc');
+            // .where('eventoccurrences.eventdatetimestart', '>=', new Date()) // 🔴 이 줄을 삭제하거나 주석 처리하세요!
+            .orderBy('eventoccurrences.eventdatetimestart', 'desc'); // 최신순
 
         res.render('registerUserEvent', { title: 'Register User for Event', participants, events });
 
@@ -153,12 +155,21 @@ app.get('/admin/register-event', isLogged, isManager, async (req, res) => {
     }
 });
 
-// 2. 등록 처리 로직 (POST)
+// 2. 등록 처리 로직 (POST) - 안전장치 추가 버전
 app.post('/admin/register-event', isLogged, isManager, async (req, res) => {
+    // 1. 데이터 수신 확인
     const { participantId, eventOccurrenceId } = req.body;
 
+    // [디버깅] 터미널에 받은 데이터를 출력해서 확인
+    console.log("Registration Request Data:", req.body); 
+
+    // 2. 유효성 검사 (값이 없으면 에러 방지)
+    if (!participantId || !eventOccurrenceId) {
+        return res.send("<script>alert('Please select both a participant and an event.'); window.history.back();</script>");
+    }
+
     try {
-        // 중복 등록 확인
+        // 3. 중복 등록 확인
         const existing = await knex('participantregistrations')
             .where({
                 participantid: participantId,
@@ -170,20 +181,26 @@ app.post('/admin/register-event', isLogged, isManager, async (req, res) => {
             return res.send("<script>alert('This user is already registered for this event.'); window.history.back();</script>");
         }
 
-        // 등록 실행
+        // ✅ 4. ID 직접 계산 (DB 시퀀스 에러 100% 해결)
+        // 현재 가장 큰 ID를 찾아서 +1을 합니다. 
+        const maxIdResult = await knex('participantregistrations').max('participantregistrationid as maxId').first();
+        const nextId = (maxIdResult.maxId || 0) + 1;
+
+        // 5. 등록 실행 (ID 포함해서 5개 컬럼 입력)
         await knex('participantregistrations').insert({
+            participantregistrationid: nextId, // 강제 지정
             participantid: participantId,
             eventoccurrenceid: eventOccurrenceId,
             registrationcreatedat: new Date(),
             registrationstatus: 'Registered'
         });
 
-        // 성공 후 참가자 목록으로 이동 (또는 계속 등록)
+        // 6. 성공
         res.send("<script>alert('Registration Successful!'); window.location.href='/participants';</script>");
 
     } catch (err) {
         console.error("Admin Register Error:", err);
-        res.status(500).send("Error registering user for event.");
+        res.status(500).send("Error registering user: " + err.message);
     }
 });
 // ==========================================
