@@ -481,8 +481,8 @@ app.get('/events', isLogged, async (req, res) => {
             title: 'Events', 
             events, 
             search,
-            alertMessage,   // <-- FIX
-            alertType       // <-- FIX
+            alertMessage,   
+            alertType       
         });
 
     } catch (err) { 
@@ -490,6 +490,38 @@ app.get('/events', isLogged, async (req, res) => {
         res.send(err.message); 
     }
 });
+
+// GET page
+app.get('/events/addDate', isLogged, async (req, res) => {
+    try {
+        const events = await knex('eventtemplates').orderBy('eventtemplateid');
+        res.render('editEventDate', { title: 'Add Event Date', events });
+    } catch (err) {
+        console.error(err);
+        res.send(err.message);
+    }
+});
+
+// POST form submission
+app.post('/events/addDate', isLogged, async (req, res) => {
+    const { eventTemplateId, eventDateTimeStart, eventDateTimeEnd, eventLocation, eventCapacity, eventRegistrationDeadline } = req.body;
+
+    try {
+        await knex('eventoccurrences').insert({
+            eventtemplateid: eventTemplateId,
+            eventdatetimestart: eventDateTimeStart,
+            eventdatetimeend: eventDateTimeEnd,
+            eventlocation: eventLocation,
+            eventcapacity: eventCapacity,
+            eventregistrationdeadline: eventRegistrationDeadline || null
+        });
+        res.redirect('/events?msg=added');
+    } catch (err) {
+        console.error(err);
+        res.send(err.message);
+    }
+});
+
 
 
 // --- EVENTS: ADD & EDIT ROUTES ---
