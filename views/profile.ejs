@@ -79,25 +79,32 @@
 
                             <% if (myRegistrations.length > 0) { %>
                                 <% myRegistrations.forEach(r => { %>
-                                    <li class="list-group-item px-4 py-3 d-flex justify-content-between align-items-center">
+                                <li class="list-group-item px-4 py-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="fw-bold"><%= r.eventname %></span><br>
+                                        <span class="text-muted small">
+                                            <%= new Date(r.eventdatetimestart).toLocaleString() %>
+                                        </span>
+                                    </div>
 
-                                        <div>
-                                            <span class="fw-bold"><%= r.eventname %></span><br>
-                                            <span class="text-muted small">
-                                                <%= new Date(r.eventdatetimestart).toLocaleString() %>
-                                            </span>
-                                        </div>
+                                    <div class="d-flex gap-2">
+                                        <!-- Survey Button (goes BEFORE cancel) -->
+                                        <a href="/testSurvey?returnUrl=/profile" class="btn btn-sm btn-outline-primary rounded-pill">
+                                            Take Survey
+                                        </a>
 
+                                        <!-- Cancel Registration -->
                                         <form action="/profile/deregister/<%= r.participantregistrationid %>" 
                                             method="POST"
                                             onsubmit="return confirm('Deregister from <%= r.eventname %>?');">
-
                                             <button class="btn btn-sm btn-outline-danger rounded-pill">
                                                 Cancel Registration
                                             </button>
                                         </form>
-                                    </li>
-                                <% }) %>
+                                    </div>
+                                </li>
+                            <% }) %>
+
 
                             <% } else { %>
                                 <li class="list-group-item p-4 text-center text-muted">

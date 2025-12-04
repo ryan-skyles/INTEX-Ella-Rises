@@ -936,17 +936,29 @@ app.get('/events/calendarData/:templateId', isLogged, async (req, res) => {
     }
 });
 
-
-
+// ADMIN MILESTONES 
 app.get('/milestones', isLogged, async (req, res) => {
     const search = req.query.search || '';
     try {
         const milestones = await knex('milestones')
             .where('milestonetitle', 'ilike', `%${search}%`)
             .orderBy('milestoneid');
-        res.render('milestones', { title: 'Milestones', milestones, search });
-    } catch (err) { console.error(err); res.send(err.message); }
+
+        // 🔥 Count total milestone achievements
+        const [{ count }] = await knex('participantmilestones').count('*');
+
+        res.render('milestones', { 
+            title: 'Milestones', 
+            milestones, 
+            search,
+            totalMilestonesAchieved: count  // ← pass to EJS
+        });
+    } catch (err) { 
+        console.error(err); 
+        res.send(err.message); 
+    }
 });
+
 
 // ✅ 2. 마일스톤 상세 보기 (누가 달성했는지 조회)
 app.get('/milestones/view/:id', isLogged, async (req, res) => {
@@ -1223,6 +1235,21 @@ app.get('/surveys/:id', isLogged, async (req, res) => {
         res.status(500).send("Error loading survey details.");
     }
 });
+
+//TEST SURVEY ROUTES:
+// GET dummy survey page
+app.get('/testSurvey', isLogged, (req, res) => {
+    const returnUrl = req.query.returnUrl || '/profile'; // where to go back after survey
+    res.render('testSurvey', { title: 'Test Survey', returnUrl });
+});
+
+// POST dummy survey submission (does nothing)
+app.post('/testSurvey', isLogged, (req, res) => {
+    const returnUrl = req.body.returnUrl || '/profile';
+    // Do not save anything
+    res.redirect(returnUrl);
+});
+
 
 
 //USER SIDE SURVEY ROUTES
