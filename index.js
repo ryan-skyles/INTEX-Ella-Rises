@@ -104,6 +104,7 @@ app.post('/login', async (req, res) => {
         if (user && user.participantpassword === password) {
             req.session.user = {
                 id: user.participantemail,
+                participantid: user.participantid,
                 role: user.participantrole // role도 소문자
             };
             req.session.save(() => res.redirect('/'));
@@ -641,6 +642,67 @@ app.post('/profile/edit', isLogged, async (req, res) => {
         res.status(500).send("Error updating profile.");
     }
 });
+
+
+// Show "Add Milestone" page for the logged-in user
+app.get("/user/milestones/add", isLogged, async (req, res) => {
+    try {
+        const milestones = await knex("milestones")
+            .select("*")
+            .orderBy("milestoneid");
+
+        res.render("addMilestoneUser", {
+            title: "Add Milestone",
+            milestones
+        });
+
+    } catch (err) {
+        console.error("Error loading milestones:", err);
+        res.send("Error loading milestones");
+    }
+});
+
+
+// Save a new milestone for the logged-in user
+app.post("/user/milestones/add", isLogged, async (req, res) => {
+    const participantid = req.session.user.participantid;
+    const { milestoneid, milestonedate } = req.body;
+
+    console.log("Form data received:", req.body); // Debugging
+
+    // Validate input
+    if (!milestoneid || !milestonedate) {
+        return res.send("<script>alert('Please select a milestone and a date.'); window.history.back();</script>");
+    }
+
+    try {
+        // Count how many milestones the user already has
+        const countResult = await knex("participantmilestones")
+            .where({ participantid })
+            .count("* as count")
+            .first();
+
+        const nextmilestoneno = Number(countResult.count) + 1;
+
+        // Insert new milestone
+        await knex("participantmilestones").insert({
+            participantid,
+            milestoneid: Number(milestoneid),
+            milestonedate,      // YYYY-MM-DD format
+            milestoneno: nextmilestoneno
+        });
+
+        res.redirect("/profile?newMilestone=1"); // redirect to user profile page
+
+    } catch (err) {
+        console.error("Error saving milestone:", err);
+        res.send("Error saving milestone");
+    }
+});
+
+
+
+
 
 // 3. Register for an Event (POST)
 app.post('/events/register/:templateId', isLogged, async (req, res) => {
