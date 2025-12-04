@@ -1052,7 +1052,8 @@ app.get('/users/view/:id', isLogged, isManager, async (req, res) => {
                 'participantregistrations.registrationstatus'
             )
             .where('participantregistrations.participantid', userId)
-            .orderBy('eventoccurrences.eventdatetimestart', 'desc');
+            .andWhere('eventoccurrences.eventdatetimestart', '>', knex.fn.now())
+            .orderBy('eventoccurrences.eventdatetimestart', 'asc');
 
         // C. Milestones
         const milestones = await knex('participantmilestones')
@@ -1072,9 +1073,10 @@ app.get('/users/view/:id', isLogged, isManager, async (req, res) => {
         res.render('participantDetail', { 
             title: 'Participant Details', 
             participant,     // ← FIXED
-            events, 
+            myRegistrations: events, 
             milestones,
-            allMilestones
+            allMilestones,
+            myDonations: []
         });
 
     } catch (err) {

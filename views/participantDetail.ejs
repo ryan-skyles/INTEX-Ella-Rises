@@ -1,85 +1,87 @@
 <%- include('partials/header') %>
 
-<main class="container my-5" style="max-width: 800px;">
-    
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-dark mb-0">Participant Details</h2>
-        <a href="/participants" class="btn btn-outline-secondary rounded-pill px-4">
-            &larr; Back to List
-        </a>
-    </div>
+<main class="container my-5">
 
-    <div class="card shadow border-0 rounded-4 overflow-hidden">
-        <div class="card-header custom-bg-blue text-white py-4 px-4">
-            <h3 class="fw-bold mb-0">
-                <i class="bi bi-person-circle me-2"></i>
-                <%= participant.participantfirstname %> <%= participant.participantlastname %>
-            </h3>
-            <span class="badge bg-light text-dark mt-2"><%= participant.participantrole.toUpperCase() %></span>
-        </div>
+    <div class="row g-4">
 
-        <div class="card-body p-4">
-
-            <div class="row g-4">
-
-                <div class="col-md-6">
-                    <h6 class="text-muted text-uppercase fw-bold small">Contact Information</h6>
-                    <hr class="mt-1 mb-3">
-                    <p class="mb-2"><strong>Email:</strong> <%= participant.participantemail %></p>
-                    <p class="mb-2"><strong>Phone:</strong> <%= participant.participantphone || 'N/A' %></p>
+        <!-- User Info Card -->
+        <div class="col-lg-5">
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-header custom-bg-blue text-white py-3 px-4">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-person-circle me-2"></i>User Information</h5>
                 </div>
+                <div class="card-body p-4">
+                    <div class="mb-3 text-center">
+                        <h3 class="fw-bold"><%= participant.participantfirstname %> <%= participant.participantlastname %></h3>
+                        <span class="badge bg-secondary"><%= participant.participantrole.toUpperCase() %></span>
+                    </div>
+                    <hr>
 
-                <div class="col-md-6">
-                    <h6 class="text-muted text-uppercase fw-bold small">Location</h6>
-                    <hr class="mt-1 mb-3">
-                    <p class="mb-2"><strong>City:</strong> <%= participant.participantcity || 'N/A' %></p>
-                    <p class="mb-2"><strong>State:</strong> <%= participant.participantstate || 'N/A' %></p>
-                    <p class="mb-2"><strong>Zip:</strong> <%= participant.participantzip || 'N/A' %></p>
-                </div>
-
-                <div class="col-12 mt-4">
-                    <h6 class="text-muted text-uppercase fw-bold small">Additional Info</h6>
-                    <hr class="mt-1 mb-3">
-                    <p class="mb-2"><strong>Field of Interest:</strong> <%= participant.participantfieldofinterest || 'Not Specified' %></p>
-                    <p class="mb-2"><strong>Total Donations:</strong> $<%= participant.totaldonations || '0.00' %></p>
-                </div>
-                
-                <!-- MILESTONES SECTION -->
-                <div class="col-12 mt-4">
-
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h6 class="text-muted text-uppercase fw-bold small">Milestones Achieved</h6>
-
-                        <% if (locals.user && (locals.user.role === 'manager' || locals.user.role === 'admin')) { %>
-                            <button class="btn btn-success btn-sm rounded-pill"
-                                data-bs-toggle="modal" data-bs-target="#addMilestoneModal">
-                                <i class="bi bi-plus-circle me-1"></i> Add Milestone
-                            </button>
-                        <% } %>
+                    <div class="mb-3">
+                        <label class="small text-muted fw-bold">Email</label>
+                        <input type="text" class="form-control rounded-pill bg-light" value="<%= participant.participantemail %>" readonly>
                     </div>
 
-                    <hr class="mt-1 mb-3">
+                    <div class="mb-3">
+                        <label class="small text-muted fw-bold">Phone</label>
+                        <input type="text" class="form-control rounded-pill" value="<%= participant.participantphone || '' %>" readonly>
+                    </div>
 
-                    <% if (milestones && milestones.length > 0) { %>
-                        <ul class="list-group list-group-flush">
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="small text-muted fw-bold">City</label>
+                            <input type="text" class="form-control rounded-pill" value="<%= participant.participantcity || '' %>" readonly>
+                        </div>
+                        <div class="col-6">
+                            <label class="small text-muted fw-bold">State</label>
+                            <input type="text" class="form-control rounded-pill" value="<%= participant.participantstate || '' %>" readonly>
+                        </div>
+                    </div>
 
+                    <div class="mb-3">
+                        <label class="small text-muted fw-bold">Zip</label>
+                        <input type="text" class="form-control rounded-pill" value="<%= participant.participantzip || '' %>" readonly>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="small text-muted fw-bold">Field of Interest</label>
+                        <input type="text" class="form-control rounded-pill" value="<%= participant.participantfieldofinterest || 'Not Specified' %>" readonly>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="small text-muted fw-bold">Total Donations</label>
+                        <input type="text" class="form-control rounded-pill" value="$<%= participant.totaldonations || '0.00' %>" readonly>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Milestones, Events, Donations -->
+        <div class="col-lg-7">
+
+            <!-- Milestones Card -->
+            <div class="card shadow border-0 rounded-4 mb-4">
+                <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-trophy-fill text-warning me-2"></i>Milestones Achieved</h5>
+                    
+                    <% if (locals.user && (locals.user.role === 'manager' || locals.user.role === 'admin')) { %>
+                        <button class="btn btn-sm btn-success rounded-pill" data-bs-toggle="modal" data-bs-target="#addMilestoneModal">
+                            <i class="bi bi-plus-circle me-1"></i> Add Milestone
+                        </button>
+                    <% } %>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        <% if (milestones.length > 0) { %>
                             <% milestones.forEach(m => { %>
-                                <li class="list-group-item px-0 d-flex justify-content-between align-items-center border-bottom">
+                                <li class="list-group-item px-4 py-3 d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold"><%= m.milestonetitle %></span>
+                                    <span class="badge bg-light text-dark border">
+                                        <%= m.milestonedate ? new Date(m.milestonedate).toLocaleDateString() : 'N/A' %>
+                                    </span>
 
-                                    <div class="d-flex align-items-center">
-                                        <i class="bi bi-trophy-fill text-warning me-3 fs-5"></i>
-                                        <span class="fw-bold text-dark"><%= m.milestonetitle %></span>
-                                    </div>
-
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="text-muted small">
-                                            <i class="bi bi-calendar-event me-1"></i>
-                                            <%= m.milestonedate ? new Date(m.milestonedate).toLocaleDateString() : 'No Date' %>
-                                        </span>
-
-                                        <% if (locals.user && (locals.user.role === 'manager' || locals.user.role === 'admin')) { %>
-
-                                            <!-- EDIT BUTTON -->
+                                    <% if (locals.user && (locals.user.role === 'manager' || locals.user.role === 'admin')) { %>
+                                        <div class="ms-2 d-flex gap-2">
                                             <button class="btn btn-sm btn-outline-primary rounded-pill editMilestoneBtn"
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#editMilestoneModal"
@@ -89,38 +91,79 @@
                                                 Edit
                                             </button>
 
-                                            <!-- DELETE -->
-                                            <form action="/admin/milestones/delete/<%= m.participantmilestoneid %>?participant=<%= participant.participantid %>"
-                                                method="POST" onsubmit="return confirm('Delete this milestone?')">
-                                                <button class="btn btn-sm btn-outline-danger rounded-pill">Delete</button>
+                                            <form class="deleteMilestoneForm" data-id="<%= m.participantmilestoneid %>" data-participant="<%= participant.participantid %>">
+                                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill showDeleteConfirm">
+                                                    Delete
+                                                </button>
                                             </form>
-
-                                        <% } %>
-                                    </div>
+                                        </div>
+                                    <% } %>
                                 </li>
                             <% }) %>
-
-                        </ul>
-                    <% } else { %>
-
-                        <div class="alert alert-light text-center text-muted border-0">
-                            <i class="bi bi-info-circle me-2"></i> No milestones recorded yet.
-                        </div>
-
-                    <% } %>
-
+                        <% } else { %>
+                            <li class="list-group-item p-4 text-center text-muted">No milestones yet.</li>
+                        <% } %>
+                    </ul>
                 </div>
-
             </div>
 
-            <% if (locals.user && (locals.user.role === 'manager' || locals.user.role === 'admin')) { %>
-                <div class="mt-5 d-flex justify-content-end">
-                    <a href="/participants/edit/<%= participant.participantid %>" 
-                       class="btn btn-primary rounded-pill px-4 me-2">
-                        Edit Info
-                    </a>
+            <!-- Upcoming Events Card -->
+            <div class="card shadow border-0 rounded-4 mb-4">
+                <div class="card-header bg-white py-3 px-4 border-0">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-calendar-check text-primary me-2"></i>Upcoming Events</h5>
                 </div>
-            <% } %>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        <% if (myRegistrations.length > 0) { %>
+                            <% myRegistrations.forEach(r => { %>
+                                <li class="list-group-item px-4 py-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="fw-bold"><%= r.eventname %></span><br>
+                                        <span class="text-muted small"><%= new Date(r.eventdatetimestart).toLocaleString() %></span>
+                                    </div>
+
+                                    <form action="/profile/deregister/<%= r.participantregistrationid %>" method="POST" onsubmit="return confirm('Deregister from <%= r.eventname %>?');">
+                                        <button class="btn btn-sm btn-outline-danger rounded-pill">Cancel</button>
+                                    </form>
+                                </li>
+                            <% }) %>
+                        <% } else { %>
+                            <li class="list-group-item p-4 text-center text-muted">No event registrations.</li>
+                        <% } %>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Donations Card -->
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-header bg-white py-3 px-4 border-0">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-heart-fill text-danger me-2"></i>Donation History</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0 align-middle">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-4">Date</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if (myDonations.length > 0) { %>
+                                    <% myDonations.forEach(d => { %>
+                                        <tr>
+                                            <td class="ps-4 text-muted"><%= d.donationdate ? new Date(d.donationdate).toLocaleDateString('en-US', { timeZone: 'UTC' }) : 'N/A' %></td>
+                                            <td class="fw-bold text-success">$<%= parseFloat(d.donationamount).toLocaleString('en-US', { minimumFractionDigits: 2 }) %></td>
+                                        </tr>
+                                    <% }) %>
+                                <% } else { %>
+                                    <tr><td colspan="2" class="text-center p-4 text-muted">No donations yet.</td></tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
         </div>
     </div>
@@ -129,15 +172,12 @@
     <div class="modal fade" id="addMilestoneModal" tabindex="-1">
         <div class="modal-dialog">
             <form class="modal-content" action="/admin/milestones/add" method="POST">
-
                 <div class="modal-header">
                     <h5 class="modal-title">Add Milestone</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-
                 <div class="modal-body">
                     <input type="hidden" name="participantid" value="<%= participant.participantid %>">
-
                     <div class="mb-3">
                         <label class="form-label fw-bold">Milestone Title</label>
                         <select name="milestoneid" class="form-select" required>
@@ -146,22 +186,19 @@
                             <% }) %>
                         </select>
                     </div>
-
                     <div class="mb-3">
                         <label class="form-label fw-bold">Date</label>
                         <input type="date" name="milestonedate" class="form-control">
                     </div>
                 </div>
-
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-success rounded-pill px-4">Add</button>
                 </div>
-
             </form>
         </div>
     </div>
 
-    <!-- DYNAMIC EDIT MODAL -->
+    <!-- EDIT MILESTONE MODAL -->
     <div class="modal fade" id="editMilestoneModal" tabindex="-1">
         <div class="modal-dialog">
             <form class="modal-content" method="POST" id="editMilestoneForm">
@@ -171,7 +208,6 @@
                 </div>
                 <div class="modal-body">
                     <input type="hidden" name="participantid" value="<%= participant.participantid %>">
-
                     <div class="mb-3">
                         <label class="form-label fw-bold">Milestone</label>
                         <select name="milestoneid" class="form-select" id="editMilestoneSelect" required>
@@ -180,7 +216,6 @@
                             <% }) %>
                         </select>
                     </div>
-
                     <div class="mb-3">
                         <label class="form-label fw-bold">Completion Date</label>
                         <input type="date" name="milestonedate" class="form-control" id="editMilestoneDate">
@@ -198,6 +233,7 @@
 <%- include('partials/footer') %>
 
 <script>
+    // Edit milestone modal population
     const editModal = document.getElementById('editMilestoneModal');
     const editForm = document.getElementById('editMilestoneForm');
     const editSelect = document.getElementById('editMilestoneSelect');
@@ -209,11 +245,59 @@
         const milestoneId = button.getAttribute('data-milestoneid');
         const date = button.getAttribute('data-date');
 
-        // Update form action
         editForm.action = `/admin/milestones/edit/${id}`;
-
-        // Update select and date
         editSelect.value = milestoneId;
         editDate.value = date;
+    });
+
+    // Inline delete confirmation
+    document.querySelectorAll('.showDeleteConfirm').forEach(button => {
+        button.addEventListener('click', () => {
+            const form = button.closest('.deleteMilestoneForm');
+
+            // Prevent multiple popups
+            if (form.querySelector('.confirmDeletePopup')) return;
+
+            // Create confirmation popup
+            const popup = document.createElement('div');
+            popup.classList.add('confirmDeletePopup', 'position-absolute', 'bg-white', 'border', 'rounded', 'shadow', 'p-2', 'd-flex', 'gap-2');
+            popup.style.zIndex = 1000;
+
+            popup.innerHTML = `
+                <span class="text-danger fw-bold">Confirm?</span>
+                <button class="btn btn-sm btn-danger confirmYes">Yes</button>
+                <button class="btn btn-sm btn-secondary confirmNo">No</button>
+            `;
+
+            // Append to body for absolute positioning
+            document.body.appendChild(popup);
+
+            // Position the popup near the button
+            const rect = button.getBoundingClientRect();
+            popup.style.top = `${rect.bottom + window.scrollY + 4}px`;
+            popup.style.left = `${rect.left + window.scrollX}px`;
+
+            // Handle Yes
+            popup.querySelector('.confirmYes').addEventListener('click', async () => {
+                const id = form.getAttribute('data-id');
+                const participant = form.getAttribute('data-participant');
+
+                const response = await fetch(`/admin/milestones/delete/${id}?participant=${participant}`, { method: 'POST' });
+                if (response.ok) location.reload();
+                else alert('Error deleting milestone.');
+            });
+
+            // Handle No
+            popup.querySelector('.confirmNo').addEventListener('click', () => popup.remove());
+
+            // Remove popup if user clicks elsewhere
+            const removePopup = (e) => {
+                if (!popup.contains(e.target) && e.target !== button) {
+                    popup.remove();
+                    document.removeEventListener('click', removePopup);
+                }
+            };
+            document.addEventListener('click', removePopup);
+        });
     });
 </script>
