@@ -1,0 +1,43 @@
+<%- include('partials/header') %>
+
+<main class="container my-5" style="max-width: 600px;">
+    <div class="card shadow border-0 rounded-4">
+        <div class="card-header bg-white border-0 py-4 text-center">
+            <h2 class="fw-bold text-dark mb-0">Record New Donation</h2>
+        </div>
+        <div class="card-body p-4">
+            <form action="/admin/donations/add" method="POST">
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-muted small">Donor (Participant)</label>
+                    <select name="participantId" class="form-select rounded-pill" required>
+                        <option value="" selected disabled>Select a donor...</option>
+                        <% participants.forEach(p => { %>
+                            <option value="<%= p.participantid %>">
+                                <%= p.participantfirstname %> <%= p.participantlastname %> (<%= p.participantemail %>)
+                            </option>
+                        <% }) %>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-muted small">Amount ($)</label>
+                    <input type="number" name="amount" class="form-control rounded-pill" step="0.01" min="0" required>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-muted small">Date</label>
+                    <input type="date" name="date" class="form-control rounded-pill" required>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-custom-pink rounded-pill fw-bold py-2">Add Donation</button>
+                    <a href="/admin/donations" class="btn btn-outline-secondary rounded-pill fw-bold py-2">Cancel</a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</main>
+
+<%- include('partials/footer') %>

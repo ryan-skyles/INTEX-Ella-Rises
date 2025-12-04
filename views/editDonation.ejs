@@ -1,0 +1,42 @@
+<%- include('partials/header') %>
+
+<main class="container my-5" style="max-width: 600px;">
+    <div class="card shadow border-0 rounded-4">
+        <div class="card-header bg-white border-0 py-4 text-center">
+            <h2 class="fw-bold text-dark mb-0">Edit Donation</h2>
+        </div>
+        <div class="card-body p-4">
+            <form action="/admin/donations/edit/<%= donation.participantdonationid %>" method="POST">
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-muted small">Donor</label>
+                    <input type="text" class="form-control rounded-pill bg-light" value="<%= donation.participantfirstname %> <%= donation.participantlastname %>" readonly>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-muted small">Amount ($)</label>
+                    <input type="number" name="amount" class="form-control rounded-pill" step="0.01" value="<%= donation.donationamount %>" required>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-muted small">Date</label>
+                    <% 
+                        let dateValue = '';
+                        if (donation.donationdate) {
+                            dateValue = new Date(donation.donationdate).toISOString().split('T')[0];
+                        }
+                    %>
+                    <input type="date" name="date" class="form-control rounded-pill" value="<%= dateValue %>" required>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary rounded-pill fw-bold py-2">Update Donation</button>
+                    <a href="/admin/donations" class="btn btn-outline-secondary rounded-pill fw-bold py-2">Cancel</a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</main>
+
+<%- include('partials/footer') %>

@@ -253,15 +253,19 @@ app.get('/participants', isLogged, isManager, async (req, res) => {
 // ==========================================
 
 // 1. 참가자 목록 조회 (검색 기능 포함)
-app.get('/users', isLogged, async (req, res) => {
+// 1. Participant List (Search Fixed)
+app.get('/participants', isLogged, async (req, res) => {
     const search = req.query.search || '';
     try {
         const participants = await knex('participantinfo')
             .where(builder => {
                 if (search) {
-                    builder.where('participantfirstname', 'ilike', `%${search}%`)
-                        .orWhere('participantlastname', 'ilike', `%${search}%`)
-                        .orWhere('participantemail', 'ilike', `%${search}%`);
+                    const term = `%${search}%`; // Define term here
+                    builder.where('participantfirstname', 'ilike', term)
+                        .orWhere('participantlastname', 'ilike', term)
+                        .orWhere('participantemail', 'ilike', term)
+                        // Pass term as a binding parameter (second argument)
+                        .orWhereRaw("participantfirstname || ' ' || participantlastname ILIKE ?", [term]);
                 }
             })
             .orderBy('participantid', 'asc');
@@ -896,16 +900,19 @@ app.post('/milestones/delete/:id', isLogged, isManager, async (req, res) => {
 // --- USER MAINTENANCE ROUTES (Admin) ---
 // ==========================================
 
-// 1. 사용자 목록 조회 (User List)
+// 1. User List (Search Fixed)
 app.get('/users', isLogged, isManager, async (req, res) => {
     const search = req.query.search || '';
     try {
         const users = await knex('participantinfo')
             .where(builder => {
                 if (search) {
-                    builder.where('participantfirstname', 'ilike', `%${search}%`)
-                        .orWhere('participantlastname', 'ilike', `%${search}%`)
-                        .orWhere('participantemail', 'ilike', `%${search}%`);
+                    const term = `%${search}%`; // Define term here
+                    builder.where('participantfirstname', 'ilike', term)
+                        .orWhere('participantlastname', 'ilike', term)
+                        .orWhere('participantemail', 'ilike', term)
+                        // Pass term as a binding parameter
+                        .orWhereRaw("participantfirstname || ' ' || participantlastname ILIKE ?", [term]);
                 }
             })
             .orderBy('participantid', 'asc');
@@ -1057,9 +1064,10 @@ app.get('/surveys/:id', isLogged, async (req, res) => {
 });
 // index.js
 
-// 8-B. Donation Maintenance (Admin View - Records & Total)
-// index.js
-
+// ==========================================
+// --- DONATION CRUD ROUTES (Admin Only) ---
+// ==========================================
+// 1. Donation List (Search Fixed)
 app.get('/admin/donations', isLogged, isManager, async (req, res) => {
     const search = req.query.search || '';
     try {
@@ -1073,11 +1081,13 @@ app.get('/admin/donations', isLogged, isManager, async (req, res) => {
             )
             .where(builder => {
                 if(search) {
-                    builder.where('participantinfo.participantfirstname', 'ilike', `%${search}%`)
-                           .orWhere('participantinfo.participantlastname', 'ilike', `%${search}%`);
+                    const term = `%${search}%`; // Define term here
+                    builder.where('participantinfo.participantfirstname', 'ilike', term)
+                           .orWhere('participantinfo.participantlastname', 'ilike', term)
+                           // Pass term as a binding parameter
+                           .orWhereRaw("participantinfo.participantfirstname || ' ' || participantinfo.participantlastname ILIKE ?", [term]);
                 }
             })
-            // ✅ 수정된 부분: 세 번째 인자로 'last'를 추가하여 NULL 값을 맨 뒤로 보냅니다.
             .orderBy('donationdate', 'desc', 'last'); 
 
         const sumResult = await knex('participantdonations').sum('donationamount as total');
@@ -1092,7 +1102,93 @@ app.get('/admin/donations', isLogged, isManager, async (req, res) => {
 
     } catch (err) { 
         console.error(err); 
-        res.status(500).send(err.message); 
+        res.status(500).send("Error loading donations."); 
+    }
+});
+// 1. 기부금 추가 페이지 (GET)
+app.get('/admin/donations/add', isLogged, isManager, async (req, res) => {
+    try {
+        // 기부자 선택을 위해 참가자 목록 가져오기
+        const participants = await knex('participantinfo')
+            .select('participantid', 'participantfirstname', 'participantlastname', 'participantemail')
+            .orderBy('participantfirstname');
+        
+        res.render('addDonation', { title: 'Add Donation', participants });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error loading add page.");
+    }
+});
+
+// 2. 기부금 추가 로직 (POST)
+app.post('/admin/donations/add', isLogged, isManager, async (req, res) => {
+    const { participantId, amount, date } = req.body;
+    try {
+        // ID 자동 계산
+        const maxIdResult = await knex('participantdonations').max('participantdonationid as maxId').first();
+        const nextId = (maxIdResult.maxId || 0) + 1;
+
+        await knex('participantdonations').insert({
+            participantdonationid: nextId,
+            participantid: participantId,
+            donationamount: amount,
+            donationdate: date,
+            donationno: 1 // 기본값
+        });
+        res.redirect('/admin/donations');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error adding donation.");
+    }
+});
+
+// 3. 기부금 수정 페이지 (GET)
+app.get('/admin/donations/edit/:id', isLogged, isManager, async (req, res) => {
+    try {
+        const donation = await knex('participantdonations')
+            .join('participantinfo', 'participantdonations.participantid', 'participantinfo.participantid')
+            .select('participantdonations.*', 'participantinfo.participantfirstname', 'participantinfo.participantlastname')
+            .where({ participantdonationid: req.params.id })
+            .first();
+
+        if (donation) {
+            res.render('editDonation', { title: 'Edit Donation', donation });
+        } else {
+            res.redirect('/admin/donations');
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error loading donation.");
+    }
+});
+
+// 4. 기부금 수정 로직 (POST)
+app.post('/admin/donations/edit/:id', isLogged, isManager, async (req, res) => {
+    const { amount, date } = req.body;
+    try {
+        await knex('participantdonations')
+            .where({ participantdonationid: req.params.id })
+            .update({
+                donationamount: amount,
+                donationdate: date
+            });
+        res.redirect('/admin/donations');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error updating donation.");
+    }
+});
+
+// 5. 기부금 삭제 로직 (POST)
+app.post('/admin/donations/delete/:id', isLogged, isManager, async (req, res) => {
+    try {
+        await knex('participantdonations')
+            .where({ participantdonationid: req.params.id })
+            .del();
+        res.redirect('/admin/donations');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error deleting donation.");
     }
 });
 
@@ -1104,7 +1200,71 @@ app.get('/dashboard', isLogged, isManager, async (req, res) => {
     });
 });
 
+// ==========================================
+// --- PUBLIC DONATION ROUTES (Visitor) ---
+// ==========================================
 
+// 1. 기부 페이지 보여주기 (GET)
+// 로그인 안 한 사람도 접근 가능해야 하므로 isLogged 미들웨어 뺌
+app.get('/donate', (req, res) => {
+    // 로그인했다면 이메일과 이름을 미리 채워주기 위해 user 정보를 넘김
+    res.render('donations', { 
+        title: 'Donate to Ella Rises',
+        user: req.session.user || null 
+    });
+});
+
+// 2. 기부 처리 로직 (POST)
+app.post('/donate', async (req, res) => {
+    const { email, amount, firstName, lastName } = req.body;
+
+    try {
+        // [1단계] 기부자가 기존 회원인지 확인 (이메일로 검색)
+        let participant = await knex('participantinfo')
+            .where({ participantemail: email })
+            .first();
+
+        let participantId;
+
+        // [2단계] 회원이 아니면 -> 새로 등록 (참가자로 등록)
+        if (!participant) {
+            const maxIdResult = await knex('participantinfo').max('participantid as maxId').first();
+            const nextId = (maxIdResult.maxId || 0) + 1;
+            
+            participantId = nextId;
+
+            await knex('participantinfo').insert({
+                participantid: participantId,
+                participantemail: email,
+                participantfirstname: firstName,
+                participantlastname: lastName,
+                participantrole: 'donor' // 역할: 기부자(donor) 또는 participant
+                // 비밀번호는 없으므로 나중에 로그인하려면 회원가입 필요
+            });
+        } else {
+            participantId = participant.participantid;
+        }
+
+        // [3단계] 기부 내역 저장 (ParticipantDonations 테이블)
+        const maxDonationId = await knex('participantdonations').max('participantdonationid as maxId').first();
+        const nextDonationId = (maxDonationId.maxId || 0) + 1;
+
+        await knex('participantdonations').insert({
+            participantdonationid: nextDonationId,
+            participantid: participantId,
+            donationamount: amount,
+            donationdate: new Date(), // 오늘 날짜
+            donationno: 1 // 기부 횟수 (필요시 로직 추가)
+        });
+
+        // [4단계] 감사 페이지 또는 홈으로 이동
+        res.send("<script>alert('Thank you for your generous donation!'); window.location.href='/';</script>");
+
+    } catch (err) {
+        console.error("Donation Error:", err);
+        res.status(500).send("Error processing donation: " + err.message);
+    }
+});
 // 418 Teapot
 app.get('/teapot', (req, res) => {
     res.status(418).render('teapot', { title: '418' });
