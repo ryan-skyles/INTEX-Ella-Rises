@@ -27,7 +27,13 @@
 
                 <div class="mb-4">
                     <label class="form-label fw-bold text-secondary">Select Event</label>
-                    <select name="eventOccurrenceId" class="form-select form-select-lg rounded-pill" required>
+
+                    <input type="text" id="eventSearch" class="form-control rounded-pill mb-2"
+                        placeholder="🔍 Type event name or date...">
+
+                    <select name="eventOccurrenceId" id="eventSelect"
+                        class="form-select form-select-lg rounded-4" size="5" required>
+
                         <% if (events.length === 0) { %>
                             <option disabled>No events scheduled yet.</option>
                         <% } else { %>
@@ -39,13 +45,16 @@
                             <% }) %>
                         <% } %>
                     </select>
+
+                    <div class="form-text ms-2">Search and select an event.</div>
                 </div>
+
 
                 <div class="d-grid gap-2 mt-5">
                     <button type="submit" class="btn btn-success rounded-pill fw-bold py-3 shadow-sm">
                         Confirm Registration
                     </button>
-                    <a href="/participants" class="btn btn-outline-secondary rounded-pill fw-bold py-2">Cancel</a>
+                    <a href="/users" class="btn btn-outline-secondary rounded-pill fw-bold py-2">Cancel</a>
                 </div>
 
             </form>
@@ -64,6 +73,21 @@
             // 검색어가 포함되어 있으면 보이고, 아니면 숨김
             if (optionText.includes(searchText) || options[i].disabled) {
                 options[i].style.display = ""; 
+            } else {
+                options[i].style.display = "none";
+            }
+        }
+    });
+
+    document.getElementById('eventSearch').addEventListener('keyup', function() {
+        const searchText = this.value.toLowerCase();
+        const select = document.getElementById('eventSelect');
+        const options = select.getElementsByTagName('option');
+
+        for (let i = 0; i < options.length; i++) {
+            const optionText = options[i].text.toLowerCase();
+            if (optionText.includes(searchText) || options[i].disabled) {
+                options[i].style.display = "";
             } else {
                 options[i].style.display = "none";
             }
