@@ -279,35 +279,35 @@ app.get('/participants', isLogged, async (req, res) => {
 });
 
 // 2. 참가자 상세 보기 (View Details) - 마일스톤 추가됨
-app.get('/participants/view/:id', isLogged, async (req, res) => {
-    try {
-        // 1. 참가자 기본 정보 조회
-        const participant = await knex('participantinfo')
-            .where({ participantid: req.params.id })
-            .first();
+// app.get('/participants/view/:id', isLogged, async (req, res) => {
+//     try {
+//         // 1. 참가자 기본 정보 조회
+//         const participant = await knex('participantinfo')
+//             .where({ participantid: req.params.id })
+//             .first();
 
-        if (participant) {
-            // 2. 해당 참가자의 마일스톤 조회 (Milestones 테이블과 조인)
-            const milestones = await knex('participantmilestones')
-                .join('milestones', 'participantmilestones.milestoneid', 'milestones.milestoneid')
-                .select('milestones.milestonetitle', 'participantmilestones.milestonedate')
-                .where('participantmilestones.participantid', req.params.id)
-                .orderBy('participantmilestones.milestonedate', 'desc');
+//         if (participant) {
+//             // 2. 해당 참가자의 마일스톤 조회 (Milestones 테이블과 조인)
+//             const milestones = await knex('participantmilestones')
+//                 .join('milestones', 'participantmilestones.milestoneid', 'milestones.milestoneid')
+//                 .select('milestones.milestonetitle', 'participantmilestones.milestonedate')
+//                 .where('participantmilestones.participantid', req.params.id)
+//                 .orderBy('participantmilestones.milestonedate', 'desc');
 
-            // 뷰에 participant와 milestones 둘 다 전달
-            res.render('participantDetail', { 
-                title: 'Participant Details', 
-                participant, 
-                milestones 
-            });
-        } else {
-            res.status(404).send("Participant not found.");
-        }
-    } catch (err) {
-        console.error(err);
-        res.status(500).send("Error loading participant details.");
-    }
-});
+//             // 뷰에 participant와 milestones 둘 다 전달
+//             res.render('participantDetail', { 
+//                 title: 'Participant Details', 
+//                 participant, 
+//                 milestones 
+//             });
+//         } else {
+//             res.status(404).send("Participant not found.");
+//         }
+//     } catch (err) {
+//         console.error(err);
+//         res.status(500).send("Error loading participant details.");
+//     }
+// });
 
 // ✅ 3. 참가자 추가 페이지 (GET) - 이 부분이 없어서 에러가 난 것임!
 app.get('/participants/add', isLogged, isManager, (req, res) => {
@@ -392,6 +392,52 @@ app.post('/participants/delete/:id', isLogged, isManager, async (req, res) => {
         res.status(500).send("Error deleting participant.<br>Check for related records.");
     }
 });
+
+// ADMIN SIDE MILESTONE ADD/EDIT/DELETE
+// ADD MILESTONE ADMIN
+app.post('/admin/milestones/add', isLogged, isManager, async (req, res) => {
+    const { participantid, milestoneid, milestonedate } = req.body;
+
+    await knex('participantmilestones').insert({
+        participantid,
+        milestoneid,
+        milestonedate: milestonedate || null
+    });
+
+    res.redirect(`/users/view/${participantid}`);
+});
+
+
+
+// EDIT MILESTONE ADMIN
+app.post('/admin/milestones/edit/:id', isLogged, isManager, async (req, res) => {
+    const participantMilestoneId = req.params.id;
+    const { milestoneid, milestonedate, participantid } = req.body;
+
+    await knex('participantmilestones')
+        .where({ participantmilestoneid: participantMilestoneId })
+        .update({
+            milestoneid,
+            milestonedate: milestonedate || null
+        });
+
+    res.redirect(`/users/view/${participantid}`);
+});
+
+ 
+// DELETE MILESTONE ADMIN
+app.post('/admin/milestones/delete/:id', isLogged, isManager, async (req, res) => {
+    const participantMilestoneId = req.params.id;
+    const participant = req.query.participant;
+
+    await knex('participantmilestones')
+        .where({ participantmilestoneid: participantMilestoneId })
+        .del();
+
+    res.redirect(`/users/view/${participant}`);
+});
+
+
 
 
 // 5. Events Maintenance
@@ -986,15 +1032,16 @@ app.get('/users', isLogged, isManager, async (req, res) => {
 // ✅ 2. 사용자 상세 보기 (User Detail - Profile, Events, Milestones)
 app.get('/users/view/:id', isLogged, isManager, async (req, res) => {
     const userId = req.params.id;
+
     try {
         // A. Personal Profile
-        const user = await knex('participantinfo')
+        const participant = await knex('participantinfo')
             .where({ participantid: userId })
             .first();
 
-        if (!user) return res.status(404).send("User not found");
+        if (!participant) return res.status(404).send("User not found");
 
-        // B. Registered Events (Join Registration -> Occurrence -> Template)
+        // B. Registered Events
         const events = await knex('participantregistrations')
             .join('eventoccurrences', 'participantregistrations.eventoccurrenceid', 'eventoccurrences.eventoccurrenceid')
             .join('eventtemplates', 'eventoccurrences.eventtemplateid', 'eventtemplates.eventtemplateid')
@@ -1010,14 +1057,36 @@ app.get('/users/view/:id', isLogged, isManager, async (req, res) => {
         // C. Milestones
         const milestones = await knex('participantmilestones')
             .join('milestones', 'participantmilestones.milestoneid', 'milestones.milestoneid')
-            .select('milestones.milestonetitle', 'participantmilestones.milestonedate')
+            .select(
+                'participantmilestones.participantmilestoneid',
+                'participantmilestones.milestonedate',
+                'milestones.milestonetitle',
+                'milestones.milestoneid'
+            )
             .where('participantmilestones.participantid', userId)
             .orderBy('participantmilestones.milestonedate', 'desc');
 
-        res.render('userDetail', { title: 'User Details', user, events, milestones });
+        // D. All possible milestones
+        const allMilestones = await knex('milestones').select('*');
 
-    } catch (err) { console.error(err); res.status(500).send("Error loading user details."); }
+        res.render('participantDetail', { 
+            title: 'Participant Details', 
+            participant,     // ← FIXED
+            events, 
+            milestones,
+            allMilestones
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error loading user details.");
+    }
 });
+
+
+
+
+
 
 // 3. 사용자 추가 페이지 (GET) - 기존 createUser 라우트 재활용 가능하지만 별도로 만듦
 app.get('/users/add', isLogged, isManager, (req, res) => {
