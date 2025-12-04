@@ -1,0 +1,58 @@
+<%- include('partials/header') %>
+
+<main class="container my-5" style="max-width: 600px;">
+    <div class="card shadow border-0 rounded-4">
+        <div class="card-header bg-white border-0 py-4 text-center">
+            <h2 class="fw-bold text-dark mb-0">Add Event Date</h2>
+        </div>
+        <div class="card-body p-4">
+
+            <form action="/events/addDate" method="POST">
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-muted">Event Name</label>
+                    <select name="eventTemplateId" class="form-select rounded-pill" required>
+                        <option value="" disabled selected>Select Event</option>
+                        <% events.forEach(event => { %>
+                            <option value="<%= event.eventtemplateid %>"><%= event.eventname %></option>
+                        <% }) %>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-muted">Start Date & Time</label>
+                    <input type="datetime-local" name="eventDateTimeStart" class="form-control rounded-pill" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-muted">End Date & Time</label>
+                    <input type="datetime-local" name="eventDateTimeEnd" class="form-control rounded-pill" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-muted">Location</label>
+                    <input type="text" name="eventLocation" class="form-control rounded-pill" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-muted">Capacity</label>
+                    <input type="number" name="eventCapacity" class="form-control rounded-pill" required>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold small text-muted">Registration Deadline</label>
+                    <input type="datetime-local" name="eventRegistrationDeadline" class="form-control rounded-pill">
+                </div>
+
+                <div class="d-grid gap-2 mb-4">
+                    <button type="submit" class="btn btn-primary rounded-pill fw-bold py-2">Add Event Date</button>
+                    <a href="/events" class="btn btn-outline-secondary rounded-pill fw-bold py-2">Cancel</a>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</main>
+
+<%- include('partials/footer') %>
