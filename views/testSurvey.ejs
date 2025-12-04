@@ -1,0 +1,84 @@
+<%- include('partials/header', { title }) %>
+
+<div class="container py-5">
+    <div class="card shadow rounded-4">
+        <div class="card-header">
+            <h5 class="fw-bold mb-0">Test Survey</h5>
+        </div>
+        <div class="card-body">
+            <form action="/testSurvey" method="POST">
+                <input type="hidden" name="returnUrl" value="<%= returnUrl %>">
+
+                <!-- Question 1 -->
+                <div class="mb-3">
+                    <label class="form-label">1. What is your first name?</label>
+                    <input type="text" class="form-control" placeholder="First Name">
+                </div>
+
+                <!-- Question 2 -->
+                <div class="mb-3">
+                    <label class="form-label">2. What is your last name?</label>
+                    <input type="text" class="form-control" placeholder="Last Name">
+                </div>
+
+                <!-- Question 3 -->
+                <div class="mb-3">
+                    <label class="form-label">3. Age</label>
+                    <input type="number" class="form-control" placeholder="Your age">
+                </div>
+
+                <!-- Question 4 -->
+                <div class="mb-3">
+                    <label class="form-label">4. How confident are you in pursuing STEM?</label>
+                    <select class="form-select">
+                        <option selected disabled>Select one</option>
+                        <option>Very confident</option>
+                        <option>Somewhat confident</option>
+                        <option>Not very confident</option>
+                        <option>Not confident at all</option>
+                    </select>
+                </div>
+
+                <!-- Question 5 -->
+                <div class="mb-3">
+                    <label class="form-label">5. What interests you most about this upcoming event?</label>
+                    <textarea class="form-control" rows="4" placeholder="Your thoughts"></textarea>
+                </div>
+
+                <!-- Question 6 -->
+                <div class="mb-3">
+                    <label class="form-label">
+                        6. How likely are you to explore STEAM through school, clubs, or future career goals before attending this event?
+                    </label>
+                    <select class="form-select">
+                        <option selected disabled>Select one</option>
+                        <option>Very likely</option>
+                        <option>Somewhat likely</option>
+                        <option>Not sure</option>
+                        <option>Unlikely</option>
+                    </select>
+                </div>
+
+                <!-- Question 7 -->
+                <div class="mb-3">
+                    <label class="form-label">7. How strong is your desire to pursue college someday?</label>
+                    <select class="form-select">
+                        <option selected disabled>Select one</option>
+                        <option>Very strong</option>
+                        <option>Somewhat strong</option>
+                        <option>Not sure</option>
+                        <option>Not strong</option>
+                    </select>
+                </div>
+
+                <!-- Buttons -->
+                <div class="d-flex justify-content-between">
+                    <a href="<%= returnUrl %>" class="btn btn-outline-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Finish Survey</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>
