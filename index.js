@@ -1223,7 +1223,77 @@ app.get('/surveys/:id', isLogged, async (req, res) => {
         res.status(500).send("Error loading survey details.");
     }
 });
-// index.js
+
+
+//USER SIDE SURVEY ROUTES
+// User-facing survey list
+// GET - User Survey List
+// GET - User Survey List
+app.get('/surveyUser', isLogged, async (req, res) => {
+    const search = req.query.search || '';
+    const userId = req.session.user.participantid; // make sure you store logged-in user's ID in session
+
+    try {
+        const surveys = await knex('participantsurveys')
+            .join('eventoccurrences', 'participantsurveys.eventoccurrenceid', 'eventoccurrences.eventoccurrenceid')
+            .join('eventtemplates', 'eventoccurrences.eventtemplateid', 'eventtemplates.eventtemplateid')
+            .select(
+                'participantsurveys.participantsurveyid',
+                'participantsurveys.surveysubmissiondate',
+                'eventtemplates.eventname',
+                'eventoccurrences.eventdatetimestart as eventdate'
+            )
+            .where('participantsurveys.participantid', userId) // lowercase column
+            .modify((qb) => {
+                if (search) {
+                    qb.where('eventtemplates.eventname', 'ilike', `%${search}%`);
+                }
+            })
+            .orderBy('participantsurveys.surveysubmissiondate', 'desc');
+
+        res.render('surveyUser', { title: 'My Surveys', surveys, search });
+    } catch (err) {
+        console.error("User Survey List Error:", err);
+        res.status(500).send("Error loading your surveys.");
+    }
+});
+
+// GET - User Survey Details
+app.get('/surveyUser/:id', isLogged, async (req, res) => {
+    const surveyId = req.params.id;
+    const userId = req.session.user.participantid;
+
+    try {
+        // Header info
+        const header = await knex('participantsurveys')
+            .join('eventoccurrences', 'participantsurveys.eventoccurrenceid', 'eventoccurrences.eventoccurrenceid')
+            .join('eventtemplates', 'eventoccurrences.eventtemplateid', 'eventtemplates.eventtemplateid')
+            .select(
+                'eventtemplates.eventname',
+                'eventoccurrences.eventdatetimestart as eventdate'
+            )
+            .where('participantsurveys.participantsurveyid', surveyId)
+            .andWhere('participantsurveys.participantid', userId)
+            .first();
+
+        if (!header) return res.status(404).send("Survey not found.");
+
+        // Survey questions/responses
+        const details = await knex('surveyresponses')
+            .join('surveyquestions', 'surveyresponses.questionid', 'surveyquestions.questionid')
+            .select('surveyquestions.question', 'surveyresponses.response')
+            .where('surveyresponses.participantsurveyid', surveyId)
+            .orderBy('surveyquestions.questionid');
+
+        res.render('surveyUserDetail', { title: 'Survey Details', header, details });
+
+    } catch (err) {
+        console.error("User Survey Detail Error:", err);
+        res.status(500).send("Error loading survey details.");
+    }
+});
+
+
 
 // ==========================================
 // --- DONATION CRUD ROUTES (Admin Only) ---
