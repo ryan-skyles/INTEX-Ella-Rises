@@ -23,19 +23,6 @@ app.use(
 );
 
 // --- 3. DATABASE CONNECTION ---
-const knex = require("knex")({
-    client: "pg",
-    connection: {
-        host: process.env.RDS_HOSTNAME || "postgres",
-        user: process.env.RDS_USERNAME || "postgres",
-        password: process.env.RDS_PASSWORD || "admin1234",
-        database: process.env.RDS_NAME || "ebdb",
-        port: process.env.RDS_PORT || 5432,
-        ssl: process.env.DB_SSL ? {rejectUnauthorized: false} : false
-    }
-});
-
-// for local use
 // const knex = require("knex")({
 //     client: "pg",
 //     connection: {
@@ -52,13 +39,26 @@ const knex = require("knex")({
 // const knex = require("knex")({
 //     client: "pg",
 //     connection: {
-//         host : process.env.DB_HOST || "localhost",
-//         user : process.env.DB_USER || "postgres",
-//         password : process.env.DB_PASSWORD || "admin1234",
-//         database : process.env.DB_NAME || "ellarises",
-//         port : process.env.DB_PORT || 5432  // PostgreSQL 16 typically uses port 5434
+//         host: process.env.RDS_HOSTNAME || "postgres",
+//         user: process.env.RDS_USERNAME || "postgres",
+//         password: process.env.RDS_PASSWORD || "admin1234",
+//         database: process.env.RDS_NAME || "ebdb",
+//         port: process.env.RDS_PORT || 5432,
+//         ssl: process.env.DB_SSL ? {rejectUnauthorized: false} : false
 //     }
 // });
+
+// for local use
+const knex = require("knex")({
+    client: "pg",
+    connection: {
+        host : process.env.DB_HOST || "localhost",
+        user : process.env.DB_USER || "postgres",
+        password : process.env.DB_PASSWORD || "admin1234",
+        database : process.env.DB_NAME || "ellarises",
+        port : process.env.DB_PORT || 5432  // PostgreSQL 16 typically uses port 5434
+    }
+});
 
 
 
@@ -238,7 +238,7 @@ app.post('/createUser', async (req, res) => {
     }
 });
 // 3. User Maintenance
-app.get('/users', isLogged, isManager, async (req, res) => {
+app.get('/participants', isLogged, isManager, async (req, res) => {
     const search = req.query.search || '';
     try {
         const users = await knex('participantinfo')
@@ -253,7 +253,7 @@ app.get('/users', isLogged, isManager, async (req, res) => {
 // ==========================================
 
 // 1. 참가자 목록 조회 (검색 기능 포함)
-app.get('/participants', isLogged, async (req, res) => {
+app.get('/users', isLogged, async (req, res) => {
     const search = req.query.search || '';
     try {
         const participants = await knex('participantinfo')
