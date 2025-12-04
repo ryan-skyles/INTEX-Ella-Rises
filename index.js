@@ -23,19 +23,6 @@ app.use(
 );
 
 // --- 3. DATABASE CONNECTION ---
-const knex = require("knex")({
-    client: "pg",
-    connection: {
-        host: process.env.RDS_HOSTNAME || "postgres",
-        user: process.env.RDS_USERNAME || "postgres",
-        password: process.env.RDS_PASSWORD || "admin1234",
-        database: process.env.RDS_NAME || "ebdb",
-        port: process.env.RDS_PORT || 5432,
-        ssl: process.env.DB_SSL ? {rejectUnauthorized: false} : false
-    }
-});
-
-// for local use
 // const knex = require("knex")({
 //     client: "pg",
 //     connection: {
@@ -52,13 +39,26 @@ const knex = require("knex")({
 // const knex = require("knex")({
 //     client: "pg",
 //     connection: {
-//         host : process.env.DB_HOST || "localhost",
-//         user : process.env.DB_USER || "postgres",
-//         password : process.env.DB_PASSWORD || "admin1234",
-//         database : process.env.DB_NAME || "ellarises",
-//         port : process.env.DB_PORT || 5432  // PostgreSQL 16 typically uses port 5434
+//         host: process.env.RDS_HOSTNAME || "postgres",
+//         user: process.env.RDS_USERNAME || "postgres",
+//         password: process.env.RDS_PASSWORD || "admin1234",
+//         database: process.env.RDS_NAME || "ebdb",
+//         port: process.env.RDS_PORT || 5432,
+//         ssl: process.env.DB_SSL ? {rejectUnauthorized: false} : false
 //     }
 // });
+
+// for local use
+const knex = require("knex")({
+    client: "pg",
+    connection: {
+        host : process.env.DB_HOST || "localhost",
+        user : process.env.DB_USER || "postgres",
+        password : process.env.DB_PASSWORD || "admin1234",
+        database : process.env.DB_NAME || "ellarises",
+        port : process.env.DB_PORT || 5432  // PostgreSQL 16 typically uses port 5434
+    }
+});
 
 
 
@@ -104,6 +104,7 @@ app.post('/login', async (req, res) => {
         if (user && user.participantpassword === password) {
             req.session.user = {
                 id: user.participantemail,
+                participantid: user.participantid,
                 role: user.participantrole // role도 소문자
             };
             req.session.save(() => res.redirect('/'));
@@ -238,7 +239,7 @@ app.post('/createUser', async (req, res) => {
     }
 });
 // 3. User Maintenance
-app.get('/users', isLogged, isManager, async (req, res) => {
+app.get('/participants', isLogged, isManager, async (req, res) => {
     const search = req.query.search || '';
     try {
         const users = await knex('participantinfo')
@@ -641,6 +642,67 @@ app.post('/profile/edit', isLogged, async (req, res) => {
         res.status(500).send("Error updating profile.");
     }
 });
+
+
+// Show "Add Milestone" page for the logged-in user
+app.get("/user/milestones/add", isLogged, async (req, res) => {
+    try {
+        const milestones = await knex("milestones")
+            .select("*")
+            .orderBy("milestoneid");
+
+        res.render("addMilestoneUser", {
+            title: "Add Milestone",
+            milestones
+        });
+
+    } catch (err) {
+        console.error("Error loading milestones:", err);
+        res.send("Error loading milestones");
+    }
+});
+
+
+// Save a new milestone for the logged-in user
+app.post("/user/milestones/add", isLogged, async (req, res) => {
+    const participantid = req.session.user.participantid;
+    const { milestoneid, milestonedate } = req.body;
+
+    console.log("Form data received:", req.body); // Debugging
+
+    // Validate input
+    if (!milestoneid || !milestonedate) {
+        return res.send("<script>alert('Please select a milestone and a date.'); window.history.back();</script>");
+    }
+
+    try {
+        // Count how many milestones the user already has
+        const countResult = await knex("participantmilestones")
+            .where({ participantid })
+            .count("* as count")
+            .first();
+
+        const nextmilestoneno = Number(countResult.count) + 1;
+
+        // Insert new milestone
+        await knex("participantmilestones").insert({
+            participantid,
+            milestoneid: Number(milestoneid),
+            milestonedate,      // YYYY-MM-DD format
+            milestoneno: nextmilestoneno
+        });
+
+        res.redirect("/profile?newMilestone=1"); // redirect to user profile page
+
+    } catch (err) {
+        console.error("Error saving milestone:", err);
+        res.send("Error saving milestone");
+    }
+});
+
+
+
+
 
 // 3. Register for an Event (POST)
 app.post('/events/register/:templateId', isLogged, async (req, res) => {
