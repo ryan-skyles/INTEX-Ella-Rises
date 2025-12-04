@@ -746,10 +746,6 @@ app.post("/user/milestones/add", isLogged, async (req, res) => {
     }
 });
 
-
-
-
-
 // 3. Register for an Event (POST)
 app.post('/events/register/:templateId', isLogged, async (req, res) => {
     const templateId = req.params.templateId;
