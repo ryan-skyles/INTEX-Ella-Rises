@@ -72,13 +72,13 @@
                                             <!-- DELETE -->
                                             <form action="/events/delete/<%= e.eventtemplateid %>" 
                                                   method="POST" 
-                                                  onsubmit="return confirm('Delete this event?');"
+                                                  onsubmit="return confirm('Are you sure you want to delete this event?\n\nDeleting this will permanently remove all related records.\n\nThis action cannot be undone. Please proceed only if you are absolutley certain.');"
                                                   style="display:inline;">
                                                 <button class="btn btn-sm btn-outline-danger">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
                                             </form>
-
+                                            
                                             <!-- EDIT -->
                                             <a href="/events/edit/<%= e.eventtemplateid %>" 
                                                class="btn btn-sm btn-outline-primary ms-1">

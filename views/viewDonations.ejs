@@ -9,7 +9,7 @@
         <div class="col-md-6 col-lg-4">
             <div class="card shadow border-0 rounded-4 text-center">
                 <div class="card-body py-4">
-                    <h1 class="display-4 fw-bold text-black mb-0" id="milestones-total">
+                    <h1 class="display-4 fw-bold text-black mb-0">
                         $<%= parseFloat(grandTotal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
                     </h1>
                     <h6 class="text-uppercase text-muted fw-bold mb-2">Total Donations Raised</h6>
@@ -78,29 +78,6 @@
             </table>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </main>
 
 <%- include('partials/footer') %>
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    
-    // Target the card containing the total milestones
-    const target = document.querySelector("#milestones-total");
-
-    if (target) {
-        const rect = target.getBoundingClientRect();
-
-        // Launch confetti centered over the card
-        confetti({
-            particleCount: 120,
-            spread: 70,
-            origin: { 
-                x: (rect.left + rect.width / 2) / window.innerWidth,
-                y: (rect.top + rect.height / 2) / window.innerHeight
-            }
-        });
-    }
-});
-</script>

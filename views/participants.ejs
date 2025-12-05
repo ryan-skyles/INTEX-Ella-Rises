@@ -61,7 +61,7 @@
                                     <a href="/participants/edit/<%= p.participantid %>" class="btn btn-sm btn-outline-primary me-1" title="Edit">
                                         <i class="bi bi-pencil"></i>
                                     </a>
-                                    <form action="/participants/delete/<%= p.participantid %>" method="POST" onsubmit="return confirm('Delete this participant?');" style="display:inline;">
+                                    <form action="/participants/delete/<%= p.participantid %>" method="POST" onsubmit="return confirm('Are you sure you want to delete this participant? \n\nDeleting this will permanently remove all related records.\n\nThis action cannot be undone. Please proceed only if you are absolutley certain.');" style="display:inline;">
                                         <button class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
                                     </form>
                                 <% } %>

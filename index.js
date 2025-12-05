@@ -619,7 +619,7 @@ app.post('/events/delete/:id', isLogged, isManager, async (req, res) => {
 
 // 1. My Profile Page (Info, Milestones, Donations)
 app.get('/profile', isLogged, async (req, res) => {
-    const email = req.session.user.id; // User email from session
+    const email = req.session.user.id;
 
     try {
         // A. Get Basic Info
@@ -641,6 +641,7 @@ app.get('/profile', isLogged, async (req, res) => {
             .where({ participantid: participant.participantid })
             .orderBy('donationdate', 'desc');
 
+        // D. Get UPCOMING EVENTS
         const myRegistrations = await knex('participantregistrations as pr')
             .join('eventoccurrences as eo', 'pr.eventoccurrenceid', 'eo.eventoccurrenceid')
             .join('eventtemplates as et', 'eo.eventtemplateid', 'et.eventtemplateid')
@@ -652,8 +653,23 @@ app.get('/profile', isLogged, async (req, res) => {
                 'pr.registrationstatus'
             )
             .where('pr.participantid', participant.participantid)
-            .andWhere('eo.eventdatetimestart', '>=', knex.fn.now())   // 👈 SHOW ONLY UPCOMING EVENTS
-            .orderBy('eo.eventdatetimestart', 'asc');                // 👈 Sort future → soonest first
+            .andWhere('eo.eventdatetimestart', '>=', knex.fn.now())
+            .orderBy('eo.eventdatetimestart', 'asc');
+
+        // E. Get PAST EVENTS
+        const pastEvents = await knex('participantregistrations as pr')
+            .join('eventoccurrences as eo', 'pr.eventoccurrenceid', 'eo.eventoccurrenceid')
+            .join('eventtemplates as et', 'eo.eventtemplateid', 'et.eventtemplateid')
+            .select(
+                'pr.participantregistrationid',
+                'et.eventname',
+                'et.eventtype',
+                'eo.eventdatetimestart',
+                'pr.registrationstatus'
+            )
+            .where('pr.participantid', participant.participantid)
+            .andWhere('eo.eventdatetimestart', '<', knex.fn.now())
+            .orderBy('eo.eventdatetimestart', 'desc');
 
 
         res.render('profile', {
@@ -661,7 +677,8 @@ app.get('/profile', isLogged, async (req, res) => {
             participant,
             myMilestones,
             myDonations,
-            myRegistrations
+            myRegistrations,
+            pastEvents        // 👈 SEND THIS TO EJS
         });
 
     } catch (err) {
@@ -669,6 +686,8 @@ app.get('/profile', isLogged, async (req, res) => {
         res.status(500).send("Error loading profile.");
     }
 });
+
+
 
 
 // Deregister from an event
@@ -1124,6 +1143,43 @@ app.get('/users/view/:id', isLogged, isManager, async (req, res) => {
         res.status(500).send("Error loading user details.");
     }
 });
+
+app.post('/users/deregister/:registrationId', isLogged, isManager, async (req, res) => {
+    const registrationId = req.params.registrationId;
+    const participantId = req.body.participantId;
+
+    try {
+        await knex('participantregistrations')
+            .where({ participantregistrationid: registrationId, participantid: participantId })
+            .del();
+
+        res.redirect('back');
+    } catch (err) {
+        console.error(err);
+        res.redirect('back');
+    }
+});
+
+
+// app.post('/users/deregister/:registrationId', isLogged, isManager, async (req, res) => {
+//     const registrationId = req.params.registrationId;
+//     const participantId = req.body.participantId || req.query.participantId;
+
+//     try {
+//         await knex('participantregistrations')
+//             .where({
+//                 participantregistrationid: registrationId,
+//                 participantid: participantId
+//             })
+//             .del();
+
+//         res.redirect('back'); // Go back to the manager view
+//     } catch (err) {
+//         console.error(err);
+//         res.redirect('back');
+//     }
+// });
+
 
 
 
