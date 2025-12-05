@@ -38,44 +38,54 @@
     </div>
 
     <div class="card shadow border-0 rounded-4 overflow-hidden">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light">
-                    <tr>
-                        <th class="p-3">ID</th>
-                        <th class="p-3">Milestone Title</th>
-                        <th class="p-3 text-end">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% if (milestones.length > 0) { %>
-                        <% milestones.forEach(m => { %>
-                        <tr>
-                            <td class="p-3">#<%= m.milestoneid %></td>
-                            <td class="p-3 fw-bold"><%= m.milestonetitle %></td>
-                            <td class="p-3 text-end">
-                                <a href="/milestones/view/<%= m.milestoneid %>" class="btn btn-sm btn-outline-info me-1" title="View Achievers">
-                                    <i class="bi bi-eye"></i> View
-                                </a>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+                <tr>
+                    <th class="p-3">#</th>
+                    <th class="p-3">Milestone Title</th>
+                    <th class="p-3 text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (milestones.length > 0) { %>
 
-                                <% if (locals.user && (locals.user.role === 'manager' || locals.user.role === 'admin')) { %>
-                                    <a href="/milestones/edit/<%= m.milestoneid %>" class="btn btn-sm btn-outline-primary me-1">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    <form action="/milestones/delete/<%= m.milestoneid %>" method="POST" onsubmit="return confirm('Are you sure you want to delete this Milestone?\n\nDeleting this will permanently remove all related records.\n\nThis action cannot be undone. Please proceed only if you are absolutley certain.');" style="display:inline;">
-                                        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                                    </form>
-                                <% } %>
-                            </td>
-                        </tr>
-                        <% }) %>
-                    <% } else { %>
-                        <tr><td colspan="3" class="text-center p-4">No milestones found.</td></tr>
-                    <% } %>
-                </tbody>
-            </table>
-        </div>
+                    <% let count = 1; %> 
+                    <% milestones.forEach(m => { %>
+
+                    <tr>
+                        <!-- Numbered list -->
+                        <td class="p-3"><%= count++ %></td>
+
+                        <td class="p-3 fw-bold"><%= m.milestonetitle %></td>
+                        <td class="p-3 text-end">
+                            <a href="/milestones/view/<%= m.milestoneid %>" class="btn btn-sm btn-outline-info me-1" title="View Achievers">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+
+                            <% if (locals.user && (locals.user.role === 'manager' || locals.user.role === 'admin')) { %>
+                                <a href="/milestones/edit/<%= m.milestoneid %>" class="btn btn-sm btn-outline-primary me-1">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form action="/milestones/delete/<%= m.milestoneid %>" method="POST" 
+                                    onsubmit="return confirm('Are you sure you want to delete this Milestone?\n\nDeleting this will permanently remove all related records.\n\nThis action cannot be undone. Please proceed only if you are absolutley certain.');" 
+                                    style="display:inline;">
+                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                </form>
+                            <% } %>
+                        </td>
+                    </tr>
+
+                    <% }) %>
+
+                <% } else { %>
+                    <tr><td colspan="3" class="text-center p-4">No milestones found.</td></tr>
+                <% } %>
+            </tbody>
+        </table>
     </div>
+</div>
+
 </main>
 
 <%- include('partials/footer') %>
