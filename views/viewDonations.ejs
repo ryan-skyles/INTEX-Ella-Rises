@@ -1,3 +1,8 @@
+<!-- 
+INTEX ELLA RISES
+Group 8, Section 3
+Bailie Whetton, Josh McCauley, Jaewon Shim, Ryan Skyles
+-->
 <%- include('partials/header') %>
 <main class="container mb-5 text-center flex-grow-1">
     <div class="container">
@@ -65,7 +70,8 @@
                                 <a href="/admin/donations/edit/<%= d.participantdonationid %>" class="btn btn-sm btn-outline-primary me-1">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <form action="/admin/donations/delete/<%= d.participantdonationid %>" method="POST" onsubmit="return confirm('Delete this donation record?');" style="display:inline;">
+                                <form action="/admin/donations/delete/<%= d.participantdonationid %>" method="POST" onsubmit="return confirm('Are you sure you want to delete this donation? \n\n Deleting this will permanently remove or alter all related records. \n\n This action cannot be undone. Please proceed only if you are absolutely certain.'
+                                    );" style="display:inline;">
                                     <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
                                 </form>
                             </td>
