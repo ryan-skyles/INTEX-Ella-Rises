@@ -6,7 +6,7 @@
         
         <div class="col-lg-5">
             <div class="card shadow border-0 rounded-4">
-                <div class="card-header custom-bg-blue text-white py-3 px-4">
+                <div class="card-header custom-bg-blue text-black py-3 px-4">
                     <h5 class="fw-bold mb-0"><i class="bi bi-person-gear me-2"></i>My Information</h5>
                 </div>
                 <div class="card-body p-4">
@@ -59,7 +59,7 @@
                         </div>
 
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-primary rounded-pill fw-bold">Update Profile</button>
+                            <button type="submit" class="btn btn-primary rounded-pill text-black">Update Profile</button>
                         </div>
                     </form>
                 </div>
@@ -67,6 +67,7 @@
         </div>
 
         <div class="col-lg-7">
+            <% if (participant.participantrole !== 'admin') { %>
             <div class="card shadow border-0 rounded-4 mb-4">
                     <div class="card-header bg-white py-3 px-4 border-0 d-flex justify-content-between align-items-center">
                         <h5 class="fw-bold text-dark mb-0">
@@ -154,7 +155,7 @@
                     </ul>
                 </div>
             </div>
-
+            <% } %>
 
             <div class="card shadow border-0 rounded-4">
                 <div class="card-header bg-white py-3 px-4 border-0 d-flex justify-content-between align-items-center">
