@@ -67,7 +67,7 @@
                     </h5>
                     
                     <% if (locals.user && (locals.user.role === 'manager' || locals.user.role === 'admin')) { %>
-                        <button class="btn btn-sm btn-success rounded-pill" data-bs-toggle="modal" data-bs-target="#addMilestoneModal">
+                        <button class="btn btn-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#addMilestoneModal">
                             <i class="bi bi-plus-circle me-1"></i> Add Milestone
                         </button>
                     <% } %>
@@ -112,7 +112,9 @@
             <!-- Upcoming Events Card -->
             <div class="card shadow border-0 rounded-4 mb-4">
                 <div class="card-header bg-white py-3 px-4 border-0">
-                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-calendar-check text-primary me-2"></i>Upcoming Events</h5>
+                    <h5 class="fw-bold text-dark mb-0">
+                        <i class="bi bi-calendar-check text-primary me-2"></i>Upcoming Events
+                    </h5>
                 </div>
                 <div class="card-body p-0">
                     <ul class="list-group list-group-flush">
@@ -123,10 +125,6 @@
                                         <span class="fw-bold"><%= r.eventname %></span><br>
                                         <span class="text-muted small"><%= new Date(r.eventdatetimestart).toLocaleString() %></span>
                                     </div>
-
-                                    <form action="/profile/deregister/<%= r.participantregistrationid %>" method="POST" onsubmit="return confirm('Deregister from <%= r.eventname %>?');">
-                                        <button class="btn btn-sm btn-outline-danger rounded-pill">Cancel</button>
-                                    </form>
                                 </li>
                             <% }) %>
                         <% } else { %>
