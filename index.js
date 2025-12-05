@@ -1,3 +1,10 @@
+// INTEX ELLA RISES
+// Group 8, Section 3
+// Bailie Whetton, Josh McCauley, Jaewon Shim, Ryan Skyles
+// Index.js page
+
+
+// Load environment variables
 require("dotenv").config();
 const express = require("express");
 const path = require('path');
@@ -6,13 +13,17 @@ const session = require("express-session");
 
 const port = process.env.PORT || 3000;
 
-// --- 1. MIDDLEWARE SETUP ---
+// -----------------------------------------
+// 1. MIDDLEWARE SETUP
+// -----------------------------------------
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.set("view engine", "ejs");
 
-// --- 2. SESSION SETUP ---
+// -----------------------------------------
+// 2. SESSION SETUP
+// -----------------------------------------
 app.use(
     session({
         secret: process.env.SESSION_SECRET || 'my-super-secret-key-12345',
@@ -22,7 +33,9 @@ app.use(
     })
 );
 
-// --- 3. DATABASE CONNECTION ---
+// -----------------------------------------
+// 3. DATABASE CONNECTION
+// -----------------------------------------
 const knex = require("knex")({
     client: "pg",
     connection: {
@@ -31,38 +44,15 @@ const knex = require("knex")({
         password: process.env.RDS_PASSWORD || "admin1234",
         database: process.env.RDS_NAME || "ebdb",
         port: process.env.RDS_PORT || 5432,
-        ssl: process.env.DB_SSL ? {rejectUnauthorized: false} : false
+        ssl: process.env.DB_SSL ? { rejectUnauthorized: false } : false
     }
 });
 
-// for local use
-// const knex = require("knex")({
-//     client: "pg",
-//     connection: {
-//         host: process.env.RDS_HOSTNAME || "postgres",
-//         user: process.env.RDS_USERNAME || "postgres",
-//         password: process.env.RDS_PASSWORD || "admin1234",
-//         database: process.env.RDS_NAME || "ebdb",
-//         port: process.env.RDS_PORT || 5432,
-//         ssl: process.env.DB_SSL ? {rejectUnauthorized: false} : false
-//     }
-// });
+// -----------------------------------------
+// 4. CUSTOM MIDDLEWARE
+// -----------------------------------------
 
-// for local use
-// const knex = require("knex")({
-//     client: "pg",
-//     connection: {
-//         host : process.env.DB_HOST || "localhost",
-//         user : process.env.DB_USER || "postgres",
-//         password : process.env.DB_PASSWORD || "admin1234",
-//         database : process.env.DB_NAME || "ellarises",
-//         port : process.env.DB_PORT || 5432  // PostgreSQL 16 typically uses port 5434
-//     }
-// });
-
-
-
-// --- 4. CUSTOM MIDDLEWARE ---
+// Checks if user is logged in
 const isLogged = (req, res, next) => {
     if (req.session.user) {
         res.locals.user = req.session.user;
@@ -72,6 +62,7 @@ const isLogged = (req, res, next) => {
     }
 };
 
+// Checks if user is manager or admin
 const isManager = (req, res, next) => {
     if (req.session.user && (req.session.user.role === 'manager' || req.session.user.role === 'admin')) {
         next();
@@ -80,17 +71,22 @@ const isManager = (req, res, next) => {
     }
 };
 
-// --- ROUTES ---
+// -----------------------------------------
+// ROUTES
+// -----------------------------------------
 
-// 1. Landing Page
+// Landing Page
 app.get('/', (req, res) => {
-    res.render('index', { 
-        title: 'Home - Ella Rises', 
-        user: req.session.user || null 
+    res.render('index', {
+        title: 'Home - Ella Rises',
+        user: req.session.user || null
     });
 });
 
-// 2. Authentication
+// -----------------------------------------
+// AUTHENTICATION ROUTES
+// -----------------------------------------
+
 app.get('/login', (req, res) => {
     res.render('login', { title: 'Login', error: null });
 });
@@ -98,14 +94,13 @@ app.get('/login', (req, res) => {
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
-        // 소문자 컬럼명 사용 (participantemail)
         const user = await knex('participantinfo').where({ participantemail: email }).first();
-        
+
         if (user && user.participantpassword === password) {
             req.session.user = {
                 id: user.participantemail,
                 participantid: user.participantid,
-                role: user.participantrole // role도 소문자
+                role: user.participantrole
             };
             req.session.save(() => res.redirect('/'));
         } else {
@@ -120,22 +115,20 @@ app.post('/login', async (req, res) => {
 app.get('/logout', (req, res) => {
     req.session.destroy(() => res.redirect('/'));
 });
-// ==========================================
-// --- ADMIN: REGISTER USER FOR EVENT ---
-// ==========================================
 
-// 1. 등록 페이지 보여주기 (GET)
-// index.js
+// -----------------------------------------
+// ADMIN: REGISTER USER FOR EVENT
+// -----------------------------------------
 
-// 1. 등록 페이지 보여주기 (GET)
+// Display registration page
 app.get('/admin/register-event', isLogged, isManager, async (req, res) => {
     try {
-        // A. 참가자 가져오기 (이름순 정렬)
+        // Fetch participants
         const participants = await knex('participantinfo')
             .select('participantid', 'participantfirstname', 'participantlastname', 'participantemail')
             .orderBy('participantfirstname');
 
-        // B. 이벤트 일정 가져오기 (날짜 제한 제거함)
+        // Fetch events
         const events = await knex('eventoccurrences')
             .join('eventtemplates', 'eventoccurrences.eventtemplateid', 'eventtemplates.eventtemplateid')
             .select(
@@ -144,80 +137,65 @@ app.get('/admin/register-event', isLogged, isManager, async (req, res) => {
                 'eventoccurrences.eventdatetimestart',
                 'eventoccurrences.eventlocation'
             )
-            // .where('eventoccurrences.eventdatetimestart', '>=', new Date()) // 🔴 이 줄을 삭제하거나 주석 처리하세요!
-            .orderBy('eventoccurrences.eventdatetimestart', 'desc'); // 최신순
+            .orderBy('eventoccurrences.eventdatetimestart', 'desc');
 
         res.render('registerUserEvent', { title: 'Register User for Event', participants, events });
-
     } catch (err) {
         console.error("Load Register Page Error:", err);
         res.status(500).send("Error loading registration page.");
     }
 });
 
-// 2. 등록 처리 로직 (POST) - 안전장치 추가 버전
+// Handle participant registration
 app.post('/admin/register-event', isLogged, isManager, async (req, res) => {
-    // 1. 데이터 수신 확인
     const { participantId, eventOccurrenceId } = req.body;
 
-    // [디버깅] 터미널에 받은 데이터를 출력해서 확인
-    console.log("Registration Request Data:", req.body); 
-
-    // 2. 유효성 검사 (값이 없으면 에러 방지)
     if (!participantId || !eventOccurrenceId) {
         return res.send("<script>alert('Please select both a participant and an event.'); window.history.back();</script>");
     }
 
     try {
-        // 3. 중복 등록 확인
+        // Prevent duplicate registration
         const existing = await knex('participantregistrations')
-            .where({
-                participantid: participantId,
-                eventoccurrenceid: eventOccurrenceId
-            })
+            .where({ participantid: participantId, eventoccurrenceid: eventOccurrenceId })
             .first();
 
         if (existing) {
             return res.send("<script>alert('This user is already registered for this event.'); window.history.back();</script>");
         }
 
-        // ✅ 4. ID 직접 계산 (DB 시퀀스 에러 100% 해결)
-        // 현재 가장 큰 ID를 찾아서 +1을 합니다. 
+        // Manually generate next registration ID
         const maxIdResult = await knex('participantregistrations').max('participantregistrationid as maxId').first();
         const nextId = (maxIdResult.maxId || 0) + 1;
 
-        // 5. 등록 실행 (ID 포함해서 5개 컬럼 입력)
+        // Insert registration record
         await knex('participantregistrations').insert({
-            participantregistrationid: nextId, // 강제 지정
+            participantregistrationid: nextId,
             participantid: participantId,
             eventoccurrenceid: eventOccurrenceId,
             registrationcreatedat: new Date(),
             registrationstatus: 'Registered'
         });
 
-        // 6. 성공
         res.send("<script>alert('Registration Successful!'); window.location.href='/participants';</script>");
-
     } catch (err) {
         console.error("Admin Register Error:", err);
         res.status(500).send("Error registering user: " + err.message);
     }
 });
-// ==========================================
-// --- SIGN UP ROUTES (Create User) ---
-// ==========================================
 
-// 1. 회원가입 페이지 보여주기 (GET)
+// -----------------------------------------
+// USER ACCOUNT CREATION
+// -----------------------------------------
+
 app.get('/createUser', (req, res) => {
     res.render('createUser', { title: 'Create Account' });
 });
 
-// 2. 회원가입 로직 처리 (POST)
 app.post('/createUser', async (req, res) => {
     const { firstName, lastName, email, password, role } = req.body;
 
     try {
-        // ID 자동 생성 (가장 큰 번호 + 1)
         const maxIdResult = await knex('participantinfo').max('participantid as maxId').first();
         const nextId = (maxIdResult.maxId || 0) + 1;
 
@@ -227,45 +205,48 @@ app.post('/createUser', async (req, res) => {
             participantlastname: lastName,
             participantemail: email,
             participantpassword: password,
-            participantrole: role || 'participant' // 기본값은 참여자
+            participantrole: role || 'participant'
         });
 
-        // 가입 성공 시 로그인 페이지로 이동
         res.send("<script>alert('Account created successfully! Please login.'); window.location.href='/login';</script>");
-        
     } catch (err) {
         console.error("Create User Error:", err);
         res.status(500).send("Error creating account: " + err.message);
     }
 });
-// 3. User Maintenance
+
+// -----------------------------------------
+// USER MAINTENANCE (ADMIN)
+// -----------------------------------------
+
 app.get('/participants', isLogged, isManager, async (req, res) => {
     const search = req.query.search || '';
     try {
         const users = await knex('participantinfo')
-            .where('participantemail', 'ilike', `%${search}%`) // 컬럼명 소문자
+            .where('participantemail', 'ilike', `%${search}%`)
             .orderBy('participantid');
-        
-        res.render('users', { title: 'User Maintenance', users, search });
-    } catch (err) { console.error(err); res.send(err.message); }
-});
-// ==========================================
-// --- PARTICIPANTS ROUTES (전체 교체) ---
-// ==========================================
 
-// 1. 참가자 목록 조회 (검색 기능 포함)
-// 1. Participant List (Search Fixed)
+        res.render('users', { title: 'User Maintenance', users, search });
+    } catch (err) {
+        console.error(err);
+        res.send(err.message);
+    }
+});
+
+// -----------------------------------------
+// PARTICIPANT DIRECTORY
+// -----------------------------------------
+
 app.get('/participants', isLogged, async (req, res) => {
     const search = req.query.search || '';
     try {
         const participants = await knex('participantinfo')
             .where(builder => {
                 if (search) {
-                    const term = `%${search}%`; // Define term here
+                    const term = `%${search}%`;
                     builder.where('participantfirstname', 'ilike', term)
                         .orWhere('participantlastname', 'ilike', term)
                         .orWhere('participantemail', 'ilike', term)
-                        // Pass term as a binding parameter (second argument)
                         .orWhereRaw("participantfirstname || ' ' || participantlastname ILIKE ?", [term]);
                 }
             })
@@ -278,54 +259,22 @@ app.get('/participants', isLogged, async (req, res) => {
     }
 });
 
-// 2. 참가자 상세 보기 (View Details) - 마일스톤 추가됨
-// app.get('/participants/view/:id', isLogged, async (req, res) => {
-//     try {
-//         // 1. 참가자 기본 정보 조회
-//         const participant = await knex('participantinfo')
-//             .where({ participantid: req.params.id })
-//             .first();
-
-//         if (participant) {
-//             // 2. 해당 참가자의 마일스톤 조회 (Milestones 테이블과 조인)
-//             const milestones = await knex('participantmilestones')
-//                 .join('milestones', 'participantmilestones.milestoneid', 'milestones.milestoneid')
-//                 .select('milestones.milestonetitle', 'participantmilestones.milestonedate')
-//                 .where('participantmilestones.participantid', req.params.id)
-//                 .orderBy('participantmilestones.milestonedate', 'desc');
-
-//             // 뷰에 participant와 milestones 둘 다 전달
-//             res.render('participantDetail', { 
-//                 title: 'Participant Details', 
-//                 participant, 
-//                 milestones 
-//             });
-//         } else {
-//             res.status(404).send("Participant not found.");
-//         }
-//     } catch (err) {
-//         console.error(err);
-//         res.status(500).send("Error loading participant details.");
-//     }
-// });
-
-// ✅ 3. 참가자 추가 페이지 (GET) - 이 부분이 없어서 에러가 난 것임!
+// Display Add Participant Page
 app.get('/participants/add', isLogged, isManager, (req, res) => {
     res.render('addParticipant', { title: 'Add New Participant' });
 });
 
-// 4. 참가자 추가 로직 (POST)
+// Handle Add Participant
 app.post('/participants/add', isLogged, isManager, async (req, res) => {
     const { email, password, firstName, lastName, role, phone, city, state, zip } = req.body;
     try {
-        // ID 자동 생성 (Max + 1)
         const maxIdResult = await knex('participantinfo').max('participantid as maxId').first();
         const nextId = (maxIdResult.maxId || 0) + 1;
 
         await knex('participantinfo').insert({
             participantid: nextId,
             participantemail: email,
-            participantpassword: password, 
+            participantpassword: password,
             participantfirstname: firstName,
             participantlastname: lastName,
             participantrole: role,
@@ -333,47 +282,6 @@ app.post('/participants/add', isLogged, isManager, async (req, res) => {
             participantcity: city,
             participantstate: state,
             participantzip: zip
-        });
-        res.redirect('/participants');
-    } catch (err) {
-        console.error(err);
-        res.status(500).send("Error adding participant.");
-    }
-});
-
-// ✅ 5. 참가자 수정 페이지 (GET) - 이 부분이 없어서 에러가 난 것임!
-app.get('/participants/edit/:id', isLogged, isManager, async (req, res) => {
-    try {
-        const participant = await knex('participantinfo')
-            .where({ participantid: req.params.id })
-            .first();
-
-        if (participant) {
-            res.render('editParticipant', { title: 'Edit Participant', participant });
-        } else {
-            res.redirect('/participants');
-        }
-    } catch (err) {
-        console.error(err);
-        res.status(500).send("Error loading participant for edit.");
-    }
-});
-
-// 6. 참가자 수정 로직 (POST)
-app.post('/participants/edit/:id', isLogged, isManager, async (req, res) => {
-    const { email, firstName, lastName, role, phone, city, state, zip } = req.body;
-    try {
-        await knex('participantinfo')
-            .where({ participantid: req.params.id })
-            .update({
-                participantemail: email,
-                participantfirstname: firstName,
-                participantlastname: lastName,
-                participantrole: role,
-                participantphone: phone,
-                participantcity: city,
-                participantstate: state,
-                participantzip: zip
             });
         res.redirect('/participants');
     } catch (err) {
@@ -382,7 +290,7 @@ app.post('/participants/edit/:id', isLogged, isManager, async (req, res) => {
     }
 });
 
-// 7. 참가자 삭제 로직 (POST)
+// 7. Delete Participant (POST)
 app.post('/participants/delete/:id', isLogged, isManager, async (req, res) => {
     try {
         await knex('participantinfo').where({ participantid: req.params.id }).del();
@@ -393,8 +301,9 @@ app.post('/participants/delete/:id', isLogged, isManager, async (req, res) => {
     }
 });
 
-// ADMIN SIDE MILESTONE ADD/EDIT/DELETE
-// ADD MILESTONE ADMIN
+// ADMIN: Milestones Add / Edit / Delete
+
+// Add Milestone (Admin)
 app.post('/admin/milestones/add', isLogged, isManager, async (req, res) => {
     const { participantid, milestoneid, milestonedate } = req.body;
 
@@ -407,9 +316,7 @@ app.post('/admin/milestones/add', isLogged, isManager, async (req, res) => {
     res.redirect(`/users/view/${participantid}`);
 });
 
-
-
-// EDIT MILESTONE ADMIN
+// Edit Milestone (Admin)
 app.post('/admin/milestones/edit/:id', isLogged, isManager, async (req, res) => {
     const participantMilestoneId = req.params.id;
     const { milestoneid, milestonedate, participantid } = req.body;
@@ -424,8 +331,7 @@ app.post('/admin/milestones/edit/:id', isLogged, isManager, async (req, res) => 
     res.redirect(`/users/view/${participantid}`);
 });
 
- 
-// DELETE MILESTONE ADMIN
+// Delete Milestone (Admin)
 app.post('/admin/milestones/delete/:id', isLogged, isManager, async (req, res) => {
     const participantMilestoneId = req.params.id;
     const participant = req.query.participant;
@@ -437,15 +343,16 @@ app.post('/admin/milestones/delete/:id', isLogged, isManager, async (req, res) =
     res.redirect(`/users/view/${participant}`);
 });
 
+// ------------------------------------------------------------
+// Events Maintenance
+// ------------------------------------------------------------
 
-
-
-// 5. Events Maintenance
+// View all events
 app.get('/events', isLogged, async (req, res) => {
     const search = req.query.search || '';
     const msg = req.query.msg;
 
-    // Set up alert values (default null)
+    // Alert message defaults
     let alertMessage = null;
     let alertType = "info";
 
@@ -481,17 +388,17 @@ app.get('/events', isLogged, async (req, res) => {
             title: 'Events', 
             events, 
             search,
-            alertMessage,   
-            alertType       
+            alertMessage,
+            alertType
         });
 
-    } catch (err) { 
-        console.error(err); 
-        res.send(err.message); 
+    } catch (err) {
+        console.error(err);
+        res.send(err.message);
     }
 });
 
-// GET page
+// Show "Add Event Date" Page
 app.get('/events/addDate', isLogged, async (req, res) => {
     try {
         const events = await knex('eventtemplates').orderBy('eventtemplateid');
@@ -502,7 +409,7 @@ app.get('/events/addDate', isLogged, async (req, res) => {
     }
 });
 
-// POST form submission
+// Submit New Event Date
 app.post('/events/addDate', isLogged, async (req, res) => {
     const { eventTemplateId, eventDateTimeStart, eventDateTimeEnd, eventLocation, eventCapacity, eventRegistrationDeadline } = req.body;
 
@@ -522,28 +429,26 @@ app.post('/events/addDate', isLogged, async (req, res) => {
     }
 });
 
+// ------------------------------------------------------------
+// Event Template Add / Edit / Delete (Admin)
+// ------------------------------------------------------------
 
-
-// --- EVENTS: ADD & EDIT ROUTES ---
-
-// 1. 이벤트 추가 페이지 보여주기 (GET)
+// Show Add Event Page
 app.get('/events/add', isLogged, isManager, (req, res) => {
     res.render('addEvent', { title: 'Add New Event' });
 });
 
-// 2. 이벤트 추가 로직 (POST) - ID 자동 계산 버전
+// Add Event (Admin) - Manual ID fallback
 app.post('/events/add', isLogged, isManager, async (req, res) => {
     const { eventName, eventType, eventRecurrence, eventDescription, eventCapacity } = req.body;
 
     try {
-        // [1단계] 현재 DB에서 가장 큰 ID 번호를 조회합니다.
-        // (DB 자동 생성기가 고장 났을 때를 대비한 안전장치)
+        // Safety check: manually compute next ID if database auto-increment fails
         const result = await knex('eventtemplates').max('eventtemplateid as maxId').first();
-        const nextId = (result.maxId || 0) + 1; // 기존 데이터가 없으면 1번, 있으면 (최대값+1)번
+        const nextId = (result.maxId || 0) + 1;
 
-        // [2단계] 직접 계산한 nextId를 포함해서 저장합니다.
         await knex('eventtemplates').insert({
-            eventtemplateid: nextId,  // ✅ 핵심: ID를 강제로 지정해서 넣음 (에러 방지)
+            eventtemplateid: nextId,
             eventname: eventName,
             eventtype: eventType,
             eventrecurrencepattern: eventRecurrence,
@@ -558,7 +463,7 @@ app.post('/events/add', isLogged, isManager, async (req, res) => {
     }
 });
 
-// 3. 이벤트 수정 페이지 보여주기 (GET)
+// Show Edit Event Page
 app.get('/events/edit/:id', isLogged, isManager, async (req, res) => {
     const eventId = req.params.id;
     try {
@@ -574,7 +479,7 @@ app.get('/events/edit/:id', isLogged, isManager, async (req, res) => {
     }
 });
 
-// 4. 이벤트 수정 로직 처리 (POST)
+// Submit Event Update
 app.post('/events/edit/:id', isLogged, isManager, async (req, res) => {
     const eventId = req.params.id;
     const { eventName, eventType, eventRecurrence, eventDescription, eventCapacity } = req.body;
@@ -595,24 +500,26 @@ app.post('/events/edit/:id', isLogged, isManager, async (req, res) => {
         res.status(500).send("Error updating event.");
     }
 });
+
+// Delete Event (Admin)
 app.post('/events/delete/:id', isLogged, isManager, async (req, res) => {
     const eventId = req.params.id;
 
     try {
-        // DB에서 삭제 시도
-        // 주의: 이미 일정(EventOccurrences)이나 설문(Surveys)에 사용된 이벤트는 
-        // 외래 키(Foreign Key) 제약 조건 때문에 삭제되지 않을 수 있습니다.
+        // Deleting may fail if the event is linked to occurrences or surveys
         await knex('eventtemplates')
             .where({ eventtemplateid: eventId })
             .del();
-            
+
         res.redirect('/events');
     } catch (err) {
         console.error("Delete Error:", err);
-        // 사용자에게 삭제 실패 이유 알림 (보통 데이터가 연결되어 있어서 삭제 못 함)
-        res.status(500).send("Error deleting event. <br>This event might be linked to existing schedules or surveys.<br><a href='/events'>Go Back</a>");
+        res.status(500).send(
+            "Error deleting event.<br>This event may be linked to existing schedules or surveys.<br><a href='/events'>Go Back</a>"
+        );
     }
 });
+
 
 
 
@@ -678,7 +585,7 @@ app.get('/profile', isLogged, async (req, res) => {
             myMilestones,
             myDonations,
             myRegistrations,
-            pastEvents        // 👈 SEND THIS TO EJS
+            pastEvents      
         });
 
     } catch (err) {
@@ -904,6 +811,7 @@ app.post('/events/registerOccurrence/:occurrenceId', isLogged, async (req, res) 
 });
 
 
+// Display the event calendar page
 app.get('/events/calendar/:templateId', isLogged, async (req, res) => {
     const templateId = req.params.templateId;
 
@@ -924,6 +832,7 @@ app.get('/events/calendar/:templateId', isLogged, async (req, res) => {
 });
 
 
+// Return JSON event data associated with a template
 app.get('/events/calendarData/:templateId', isLogged, async (req, res) => {
     const templateId = req.params.templateId;
 
@@ -955,7 +864,8 @@ app.get('/events/calendarData/:templateId', isLogged, async (req, res) => {
     }
 });
 
-// ADMIN MILESTONES 
+
+// Admin: View milestones list
 app.get('/milestones', isLogged, async (req, res) => {
     const search = req.query.search || '';
     try {
@@ -963,14 +873,14 @@ app.get('/milestones', isLogged, async (req, res) => {
             .where('milestonetitle', 'ilike', `%${search}%`)
             .orderBy('milestoneid');
 
-        // 🔥 Count total milestone achievements
+        // Count all milestone achievements
         const [{ count }] = await knex('participantmilestones').count('*');
 
         res.render('milestones', { 
             title: 'Milestones', 
             milestones, 
             search,
-            totalMilestonesAchieved: count  // ← pass to EJS
+            totalMilestonesAchieved: count
         });
     } catch (err) { 
         console.error(err); 
@@ -979,16 +889,14 @@ app.get('/milestones', isLogged, async (req, res) => {
 });
 
 
-// ✅ 2. 마일스톤 상세 보기 (누가 달성했는지 조회)
+// View details for a specific milestone, including participants who achieved it
 app.get('/milestones/view/:id', isLogged, async (req, res) => {
     try {
-        // (1) 마일스톤 정보 가져오기
         const milestone = await knex('milestones')
             .where({ milestoneid: req.params.id })
             .first();
 
         if (milestone) {
-            // (2) 이 마일스톤을 달성한 참가자들 가져오기 (Join)
             const achievers = await knex('participantmilestones')
                 .join('participantinfo', 'participantmilestones.participantid', 'participantinfo.participantid')
                 .select(
@@ -1000,7 +908,11 @@ app.get('/milestones/view/:id', isLogged, async (req, res) => {
                 .where('participantmilestones.milestoneid', req.params.id)
                 .orderBy('participantmilestones.milestonedate', 'desc');
 
-            res.render('milestoneDetail', { title: 'Milestone Details', milestone, achievers });
+            res.render('milestoneDetail', { 
+                title: 'Milestone Details', 
+                milestone, 
+                achievers 
+            });
         } else {
             res.status(404).send("Milestone not found.");
         }
@@ -1010,12 +922,14 @@ app.get('/milestones/view/:id', isLogged, async (req, res) => {
     }
 });
 
-// ✅ 3. 마일스톤 추가 페이지 (GET)
+
+// Display page for adding a new milestone
 app.get('/milestones/add', isLogged, isManager, (req, res) => {
     res.render('addMilestone', { title: 'Add New Milestone' });
 });
 
-// 4. 마일스톤 추가 로직 (POST)
+
+// Handle milestone creation
 app.post('/milestones/add', isLogged, isManager, async (req, res) => {
     const { title } = req.body;
     try {
@@ -1023,24 +937,36 @@ app.post('/milestones/add', isLogged, isManager, async (req, res) => {
             milestonetitle: title
         });
         res.redirect('/milestones');
-    } catch (err) { console.error(err); res.status(500).send("Error adding milestone."); }
+    } catch (err) { 
+        console.error(err); 
+        res.status(500).send("Error adding milestone."); 
+    }
 });
 
-// ✅ 5. 마일스톤 수정 페이지 (GET)
+
+// Display milestone edit page
 app.get('/milestones/edit/:id', isLogged, isManager, async (req, res) => {
     try {
         const milestone = await knex('milestones')
             .where({ milestoneid: req.params.id })
             .first();
+
         if (milestone) {
-            res.render('editMilestone', { title: 'Edit Milestone', milestone });
+            res.render('editMilestone', { 
+                title: 'Edit Milestone', 
+                milestone 
+            });
         } else {
             res.redirect('/milestones');
         }
-    } catch (err) { console.error(err); res.status(500).send("Error loading milestone."); }
+    } catch (err) { 
+        console.error(err); 
+        res.status(500).send("Error loading milestone."); 
+    }
 });
 
-// 6. 마일스톤 수정 로직 (POST)
+
+// Handle milestone update
 app.post('/milestones/edit/:id', isLogged, isManager, async (req, res) => {
     const { title } = req.body;
     try {
@@ -1048,59 +974,67 @@ app.post('/milestones/edit/:id', isLogged, isManager, async (req, res) => {
             .where({ milestoneid: req.params.id })
             .update({ milestonetitle: title });
         res.redirect('/milestones');
-    } catch (err) { console.error(err); res.status(500).send("Error updating milestone."); }
+    } catch (err) { 
+        console.error(err); 
+        res.status(500).send("Error updating milestone."); 
+    }
 });
 
-// 7. 마일스톤 삭제 로직 (POST)
+
+// Handle milestone deletion
 app.post('/milestones/delete/:id', isLogged, isManager, async (req, res) => {
     try {
-        await knex('milestones').where({ milestoneid: req.params.id }).del();
+        await knex('milestones')
+            .where({ milestoneid: req.params.id })
+            .del();
         res.redirect('/milestones');
     } catch (err) {
         console.error(err);
         res.status(500).send("Error deleting milestone. It may be assigned to participants.<br><a href='/milestones'>Go Back</a>");
     }
 });
-// --- SURVEYS ROUTES ---
 
 // ==========================================
-// --- USER MAINTENANCE ROUTES (Admin) ---
+// USER MAINTENANCE ROUTES (Admin)
 // ==========================================
 
-// 1. User List (Search Fixed)
+// Display user list with optional search
 app.get('/users', isLogged, isManager, async (req, res) => {
     const search = req.query.search || '';
     try {
         const users = await knex('participantinfo')
             .where(builder => {
                 if (search) {
-                    const term = `%${search}%`; // Define term here
+                    const term = `%${search}%`;
                     builder.where('participantfirstname', 'ilike', term)
                         .orWhere('participantlastname', 'ilike', term)
                         .orWhere('participantemail', 'ilike', term)
-                        // Pass term as a binding parameter
                         .orWhereRaw("participantfirstname || ' ' || participantlastname ILIKE ?", [term]);
                 }
             })
             .orderBy('participantid', 'asc');
-        
+
         res.render('users', { title: 'User Maintenance', users, search });
-    } catch (err) { console.error(err); res.status(500).send("Error loading users."); }
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error loading users.");
+    }
 });
 
-// ✅ 2. 사용자 상세 보기 (User Detail - Profile, Events, Milestones)
+
+// Display details for a specific user (profile, events, milestones)
 app.get('/users/view/:id', isLogged, isManager, async (req, res) => {
     const userId = req.params.id;
 
     try {
-        // A. Personal Profile
+        // Retrieve personal profile
         const participant = await knex('participantinfo')
             .where({ participantid: userId })
             .first();
 
         if (!participant) return res.status(404).send("User not found");
 
-        // B. Registered Events
+        // Retrieve registered future events
         const events = await knex('participantregistrations')
             .join('eventoccurrences', 'participantregistrations.eventoccurrenceid', 'eventoccurrences.eventoccurrenceid')
             .join('eventtemplates', 'eventoccurrences.eventtemplateid', 'eventtemplates.eventtemplateid')
@@ -1114,7 +1048,7 @@ app.get('/users/view/:id', isLogged, isManager, async (req, res) => {
             .andWhere('eventoccurrences.eventdatetimestart', '>', knex.fn.now())
             .orderBy('eventoccurrences.eventdatetimestart', 'asc');
 
-        // C. Milestones
+        // Retrieve milestones achieved by user
         const milestones = await knex('participantmilestones')
             .join('milestones', 'participantmilestones.milestoneid', 'milestones.milestoneid')
             .select(
@@ -1126,13 +1060,13 @@ app.get('/users/view/:id', isLogged, isManager, async (req, res) => {
             .where('participantmilestones.participantid', userId)
             .orderBy('participantmilestones.milestonedate', 'desc');
 
-        // D. All possible milestones
+        // Retrieve all possible milestones
         const allMilestones = await knex('milestones').select('*');
 
-        res.render('participantDetail', { 
-            title: 'Participant Details', 
-            participant,     // ← FIXED
-            myRegistrations: events, 
+        res.render('participantDetail', {
+            title: 'Participant Details',
+            participant,
+            myRegistrations: events,
             milestones,
             allMilestones,
             myDonations: []
@@ -1144,6 +1078,8 @@ app.get('/users/view/:id', isLogged, isManager, async (req, res) => {
     }
 });
 
+
+// Remove a user from a specific event registration
 app.post('/users/deregister/:registrationId', isLogged, isManager, async (req, res) => {
     const registrationId = req.params.registrationId;
     const participantId = req.body.participantId;
@@ -1161,37 +1097,12 @@ app.post('/users/deregister/:registrationId', isLogged, isManager, async (req, r
 });
 
 
-// app.post('/users/deregister/:registrationId', isLogged, isManager, async (req, res) => {
-//     const registrationId = req.params.registrationId;
-//     const participantId = req.body.participantId || req.query.participantId;
-
-//     try {
-//         await knex('participantregistrations')
-//             .where({
-//                 participantregistrationid: registrationId,
-//                 participantid: participantId
-//             })
-//             .del();
-
-//         res.redirect('back'); // Go back to the manager view
-//     } catch (err) {
-//         console.error(err);
-//         res.redirect('back');
-//     }
-// });
-
-
-
-
-
-
-
-// 3. 사용자 추가 페이지 (GET) - 기존 createUser 라우트 재활용 가능하지만 별도로 만듦
+// Display page for adding a new user
 app.get('/users/add', isLogged, isManager, (req, res) => {
     res.render('addUser', { title: 'Add New User' });
 });
 
-// 4. 사용자 추가 로직 (POST)
+// Handle creation of a new user
 app.post('/users/add', isLogged, isManager, async (req, res) => {
     const { firstName, lastName, email, password, role } = req.body;
     try {
@@ -1206,24 +1117,37 @@ app.post('/users/add', isLogged, isManager, async (req, res) => {
             participantpassword: password,
             participantrole: role
         });
-        res.redirect('/users');
-    } catch (err) { console.error(err); res.status(500).send("Error adding user."); }
-});
 
-// 5. 사용자 삭제 (POST)
-app.post('/users/delete/:id', isLogged, isManager, async (req, res) => {
-    try {
-        await knex('participantinfo').where({ participantid: req.params.id }).del();
         res.redirect('/users');
-    } catch (err) { 
-        console.error(err); 
-        res.status(500).send("Error deleting user. Check for related records."); 
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error adding user.");
     }
 });
 
-// 설문조사 목록 (검색 기능 추가됨)
+
+// Handle user deletion
+app.post('/users/delete/:id', isLogged, isManager, async (req, res) => {
+    try {
+        await knex('participantinfo')
+            .where({ participantid: req.params.id })
+            .del();
+
+        res.redirect('/users');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error deleting user. Check for related records.");
+    }
+});
+
+
+// ==========================================
+// SURVEY ROUTES (Admin)
+// ==========================================
+
+// Display list of surveys with optional search
 app.get('/surveys', isLogged, async (req, res) => {
-    const search = req.query.search || ''; // 검색어 가져오기
+    const search = req.query.search || '';
 
     try {
         const surveys = await knex('participantsurveys')
@@ -1238,18 +1162,15 @@ app.get('/surveys', isLogged, async (req, res) => {
                 'eventtemplates.eventname',
                 'eventoccurrences.eventdatetimestart as eventdate'
             )
-            // ✅ 검색 로직 추가 (이름 또는 이벤트명)
-            .modify((queryBuilder) => {
+            .modify(qb => {
                 if (search) {
-                    queryBuilder
-                        .where('participantinfo.participantfirstname', 'ilike', `%${search}%`)
-                        .orWhere('participantinfo.participantlastname', 'ilike', `%${search}%`)
-                        .orWhere('eventtemplates.eventname', 'ilike', `%${search}%`);
+                    qb.where('participantinfo.participantfirstname', 'ilike', `%${search}%`)
+                      .orWhere('participantinfo.participantlastname', 'ilike', `%${search}%`)
+                      .orWhere('eventtemplates.eventname', 'ilike', `%${search}%`);
                 }
             })
             .orderBy('participantsurveys.surveysubmissiondate', 'desc');
 
-        // 뷰에 search 변수도 같이 전달 (검색창에 유지하기 위해)
         res.render('surveys', { title: 'Survey List', surveys, search });
     } catch (err) {
         console.error("Survey List Error:", err);
@@ -1257,12 +1178,12 @@ app.get('/surveys', isLogged, async (req, res) => {
     }
 });
 
-// 2. 설문조사 상세 보기 (수정됨: eventdate -> eventdatetimestart as eventdate)
+
+// Display details for a specific survey
 app.get('/surveys/:id', isLogged, async (req, res) => {
     const surveyId = req.params.id;
 
     try {
-        // A. 설문 헤더 정보
         const header = await knex('participantsurveys')
             .join('participantinfo', 'participantsurveys.participantid', 'participantinfo.participantid')
             .join('eventoccurrences', 'participantsurveys.eventoccurrenceid', 'eventoccurrences.eventoccurrenceid')
@@ -1271,13 +1192,11 @@ app.get('/surveys/:id', isLogged, async (req, res) => {
                 'participantinfo.participantfirstname',
                 'participantinfo.participantlastname',
                 'eventtemplates.eventname',
-                // ✅ 핵심 수정: 여기도 동일하게 변경
                 'eventoccurrences.eventdatetimestart as eventdate'
             )
             .where('participantsurveys.participantsurveyid', surveyId)
             .first();
 
-        // B. 상세 질문 및 답변
         const details = await knex('surveyresponses')
             .join('surveyquestions', 'surveyresponses.questionid', 'surveyquestions.questionid')
             .select('surveyquestions.question', 'surveyresponses.response')
@@ -1292,29 +1211,27 @@ app.get('/surveys/:id', isLogged, async (req, res) => {
     }
 });
 
-//TEST SURVEY ROUTES:
-// GET dummy survey page
+
+// Test survey page (for development; does not store data)
 app.get('/testSurvey', isLogged, (req, res) => {
-    const returnUrl = req.query.returnUrl || '/profile'; // where to go back after survey
+    const returnUrl = req.query.returnUrl || '/profile';
     res.render('testSurvey', { title: 'Test Survey', returnUrl });
 });
 
-// POST dummy survey submission (does nothing)
 app.post('/testSurvey', isLogged, (req, res) => {
     const returnUrl = req.body.returnUrl || '/profile';
-    // Do not save anything
     res.redirect(returnUrl);
 });
 
 
+// ==========================================
+// USER-SIDE SURVEY ROUTES
+// ==========================================
 
-//USER SIDE SURVEY ROUTES
-// User-facing survey list
-// GET - User Survey List
-// GET - User Survey List
+// Display survey list for logged-in user
 app.get('/surveyUser', isLogged, async (req, res) => {
     const search = req.query.search || '';
-    const userId = req.session.user.participantid; // make sure you store logged-in user's ID in session
+    const userId = req.session.user.participantid;
 
     try {
         const surveys = await knex('participantsurveys')
@@ -1326,11 +1243,9 @@ app.get('/surveyUser', isLogged, async (req, res) => {
                 'eventtemplates.eventname',
                 'eventoccurrences.eventdatetimestart as eventdate'
             )
-            .where('participantsurveys.participantid', userId) // lowercase column
-            .modify((qb) => {
-                if (search) {
-                    qb.where('eventtemplates.eventname', 'ilike', `%${search}%`);
-                }
+            .where('participantsurveys.participantid', userId)
+            .modify(qb => {
+                if (search) qb.where('eventtemplates.eventname', 'ilike', `%${search}%`);
             })
             .orderBy('participantsurveys.surveysubmissiondate', 'desc');
 
@@ -1341,13 +1256,13 @@ app.get('/surveyUser', isLogged, async (req, res) => {
     }
 });
 
-// GET - User Survey Details
+
+// Display details for a user's own survey submission
 app.get('/surveyUser/:id', isLogged, async (req, res) => {
     const surveyId = req.params.id;
     const userId = req.session.user.participantid;
 
     try {
-        // Header info
         const header = await knex('participantsurveys')
             .join('eventoccurrences', 'participantsurveys.eventoccurrenceid', 'eventoccurrences.eventoccurrenceid')
             .join('eventtemplates', 'eventoccurrences.eventtemplateid', 'eventtemplates.eventtemplateid')
@@ -1361,7 +1276,6 @@ app.get('/surveyUser/:id', isLogged, async (req, res) => {
 
         if (!header) return res.status(404).send("Survey not found.");
 
-        // Survey questions/responses
         const details = await knex('surveyresponses')
             .join('surveyquestions', 'surveyresponses.questionid', 'surveyquestions.questionid')
             .select('surveyquestions.question', 'surveyresponses.response')
@@ -1377,56 +1291,57 @@ app.get('/surveyUser/:id', isLogged, async (req, res) => {
 });
 
 
+// ==========================================
+// DONATION CRUD ROUTES (Admin Only)
+// ==========================================
 
-// ==========================================
-// --- DONATION CRUD ROUTES (Admin Only) ---
-// ==========================================
-// 1. Donation List (Search Fixed)
+// Display donation list with optional search
 app.get('/admin/donations', isLogged, isManager, async (req, res) => {
     const search = req.query.search || '';
+
     try {
         const donations = await knex('participantdonations')
             .join('participantinfo', 'participantdonations.participantid', 'participantinfo.participantid')
             .select(
-                'participantdonations.*', 
-                'participantinfo.participantemail', 
+                'participantdonations.*',
+                'participantinfo.participantemail',
                 'participantinfo.participantfirstname',
                 'participantinfo.participantlastname'
             )
             .where(builder => {
-                if(search) {
-                    const term = `%${search}%`; // Define term here
+                if (search) {
+                    const term = `%${search}%`;
                     builder.where('participantinfo.participantfirstname', 'ilike', term)
                            .orWhere('participantinfo.participantlastname', 'ilike', term)
-                           // Pass term as a binding parameter
                            .orWhereRaw("participantinfo.participantfirstname || ' ' || participantinfo.participantlastname ILIKE ?", [term]);
                 }
             })
-            .orderBy('donationdate', 'desc', 'last'); 
+            .orderBy('donationdate', 'desc', 'last');
 
         const sumResult = await knex('participantdonations').sum('donationamount as total');
         const grandTotal = sumResult[0].total || 0;
 
-        res.render('viewDonations', { 
-            title: 'Donation Records', 
-            donations, 
+        res.render('viewDonations', {
+            title: 'Donation Records',
+            donations,
             search,
-            grandTotal 
+            grandTotal
         });
 
-    } catch (err) { 
-        console.error(err); 
-        res.status(500).send("Error loading donations."); 
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error loading donations.");
     }
 });
-// 1. 기부금 추가 페이지 (GET)
+
+
+// Display page for adding a donation
 app.get('/admin/donations/add', isLogged, isManager, async (req, res) => {
     try {
-        // 기부자 선택을 위해 참가자 목록 가져오기
         const participants = await knex('participantinfo')
             .select('participantid', 'participantfirstname', 'participantlastname', 'participantemail')
             .orderBy('participantfirstname');
-        
+
         res.render('addDonation', { title: 'Add Donation', participants });
     } catch (err) {
         console.error(err);
@@ -1434,11 +1349,11 @@ app.get('/admin/donations/add', isLogged, isManager, async (req, res) => {
     }
 });
 
-// 2. 기부금 추가 로직 (POST)
+
+// Handle donation creation
 app.post('/admin/donations/add', isLogged, isManager, async (req, res) => {
     const { participantId, amount, date } = req.body;
     try {
-        // ID 자동 계산
         const maxIdResult = await knex('participantdonations').max('participantdonationid as maxId').first();
         const nextId = (maxIdResult.maxId || 0) + 1;
 
@@ -1447,8 +1362,9 @@ app.post('/admin/donations/add', isLogged, isManager, async (req, res) => {
             participantid: participantId,
             donationamount: amount,
             donationdate: date,
-            donationno: 1 // 기본값
+            donationno: 1
         });
+
         res.redirect('/admin/donations');
     } catch (err) {
         console.error(err);
@@ -1456,7 +1372,8 @@ app.post('/admin/donations/add', isLogged, isManager, async (req, res) => {
     }
 });
 
-// 3. 기부금 수정 페이지 (GET)
+
+// Display donation edit page
 app.get('/admin/donations/edit/:id', isLogged, isManager, async (req, res) => {
     try {
         const donation = await knex('participantdonations')
@@ -1476,7 +1393,8 @@ app.get('/admin/donations/edit/:id', isLogged, isManager, async (req, res) => {
     }
 });
 
-// 4. 기부금 수정 로직 (POST)
+
+// Handle donation update
 app.post('/admin/donations/edit/:id', isLogged, isManager, async (req, res) => {
     const { amount, date } = req.body;
     try {
@@ -1486,6 +1404,7 @@ app.post('/admin/donations/edit/:id', isLogged, isManager, async (req, res) => {
                 donationamount: amount,
                 donationdate: date
             });
+
         res.redirect('/admin/donations');
     } catch (err) {
         console.error(err);
@@ -1493,12 +1412,14 @@ app.post('/admin/donations/edit/:id', isLogged, isManager, async (req, res) => {
     }
 });
 
-// 5. 기부금 삭제 로직 (POST)
+
+// Handle donation deletion
 app.post('/admin/donations/delete/:id', isLogged, isManager, async (req, res) => {
     try {
         await knex('participantdonations')
             .where({ participantdonationid: req.params.id })
             .del();
+
         res.redirect('/admin/donations');
     } catch (err) {
         console.error(err);
@@ -1506,45 +1427,53 @@ app.post('/admin/donations/delete/:id', isLogged, isManager, async (req, res) =>
     }
 });
 
-//Tableau Dashboard page
+
+// ==========================================
+// DASHBOARD ROUTE
+// ==========================================
+
+// Display Tableau dashboard page
 app.get('/dashboard', isLogged, isManager, async (req, res) => {
-    res.render('dashboard', { 
-        title: 'Dashboard', 
+    res.render('dashboard', {
+        title: 'Dashboard',
         error: null
     });
 });
 
 // ==========================================
-// --- PUBLIC DONATION ROUTES (Visitor) ---
+// Public Donation Routes (Accessible to Visitors)
 // ==========================================
 
-// 1. 기부 페이지 보여주기 (GET)
-// 로그인 안 한 사람도 접근 가능해야 하므로 isLogged 미들웨어 뺌
+
+// Display the donation page (no login required)
 app.get('/donate', (req, res) => {
-    // 로그인했다면 이메일과 이름을 미리 채워주기 위해 user 정보를 넘김
+    // If the user is logged in, pre-fill form fields with user data
     res.render('donations', { 
         title: 'Donate to Ella Rises',
         user: req.session.user || null 
     });
 });
 
-// 2. 기부 처리 로직 (POST)
+
+// Process a donation submission
 app.post('/donate', async (req, res) => {
     const { email, amount, firstName, lastName } = req.body;
 
     try {
-        // [1단계] 기부자가 기존 회원인지 확인 (이메일로 검색)
+        // Step 1: Check if the donor already exists (search by email)
         let participant = await knex('participantinfo')
             .where({ participantemail: email })
             .first();
 
         let participantId;
 
-        // [2단계] 회원이 아니면 -> 새로 등록 (참가자로 등록)
+        // Step 2: If not a participant, create a new participant record
         if (!participant) {
-            const maxIdResult = await knex('participantinfo').max('participantid as maxId').first();
+            const maxIdResult = await knex('participantinfo')
+                .max('participantid as maxId')
+                .first();
+
             const nextId = (maxIdResult.maxId || 0) + 1;
-            
             participantId = nextId;
 
             await knex('participantinfo').insert({
@@ -1552,26 +1481,30 @@ app.post('/donate', async (req, res) => {
                 participantemail: email,
                 participantfirstname: firstName,
                 participantlastname: lastName,
-                participantrole: 'donor' // 역할: 기부자(donor) 또는 participant
-                // 비밀번호는 없으므로 나중에 로그인하려면 회원가입 필요
+                participantrole: 'donor' 
+                // No password is created; user must register later if they want to log in.
             });
+
         } else {
             participantId = participant.participantid;
         }
 
-        // [3단계] 기부 내역 저장 (ParticipantDonations 테이블)
-        const maxDonationId = await knex('participantdonations').max('participantdonationid as maxId').first();
+        // Step 3: Record the donation in ParticipantDonations table
+        const maxDonationId = await knex('participantdonations')
+            .max('participantdonationid as maxId')
+            .first();
+
         const nextDonationId = (maxDonationId.maxId || 0) + 1;
 
         await knex('participantdonations').insert({
             participantdonationid: nextDonationId,
             participantid: participantId,
             donationamount: amount,
-            donationdate: new Date(), // 오늘 날짜
-            donationno: 1 // 기부 횟수 (필요시 로직 추가)
+            donationdate: new Date(),
+            donationno: 1 // Donation count (additional logic can be added if needed)
         });
 
-        // [4단계] 감사 페이지 또는 홈으로 이동
+        // Step 4: Redirect to a thank-you message or homepage
         res.send("<script>alert('Thank you for your generous donation!'); window.location.href='/';</script>");
 
     } catch (err) {
@@ -1579,11 +1512,15 @@ app.post('/donate', async (req, res) => {
         res.status(500).send("Error processing donation: " + err.message);
     }
 });
-// 418 Teapot
+
+
+// 418 Teapot page (fun Easter egg route)
 app.get('/teapot', (req, res) => {
     res.status(418).render('teapot', { title: '418' });
 });
 
+
+// Start the server
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
